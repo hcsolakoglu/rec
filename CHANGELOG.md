@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0-audio.5] - 2026-10-31
+
+### 🚀 Added
+- Keep REC running checklist in General settings. It checks battery optimization, background limits and concurrent microphone status each time you return to the screen, and shows why the system last closed a working REC in the past 7 days (Android 11+), such as recent apps cleanup or game mode memory cleanup, with the matching fix. Each item opens the right settings screen with fallbacks.
+- On Xiaomi, Redmi and POCO phones it also lists Autostart, battery saver, recents lock and Game Turbo memory booster exceptions, which REC cannot check by itself.
+
 ## [0.9.0-audio.4] - 2026-10-31
 
 ### 🚀 Added
@@ -56,6 +62,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🐛 Fixed
 * Duplicate preparation/start protection and cancellation-aware audio readers.
 
+[0.9.0-audio.5]: https://github.com/hcsolakoglu/rec/compare/separate-audio-0.9.0-4...separate-audio-0.9.0-5
 [0.9.0-audio.4]: https://github.com/hcsolakoglu/rec/compare/separate-audio-0.9.0-3...separate-audio-0.9.0-4
 [0.9.0-audio.3]: https://github.com/hcsolakoglu/rec/compare/separate-audio-0.9.0-2...separate-audio-0.9.0-3
 [0.9.0-audio.2]: https://github.com/hcsolakoglu/rec/compare/separate-audio-0.9.0-1...separate-audio-0.9.0-2

@@ -77,6 +77,8 @@ fun WhatsNewModal(
 ) {
     val haptics = LocalHapticFeedback.current
 
+    val keepAliveTitle = androidx.compose.ui.res.stringResource(R.string.keep_alive_release_title)
+    val keepAliveDescription = androidx.compose.ui.res.stringResource(R.string.keep_alive_release_description)
     val microphoneDeviceTitle = androidx.compose.ui.res.stringResource(R.string.microphone_device_release_title)
     val microphoneDeviceDescription = androidx.compose.ui.res.stringResource(R.string.microphone_device_release_description)
     val separateAudioTitle = androidx.compose.ui.res.stringResource(R.string.separate_audio_release_title)
@@ -88,10 +90,15 @@ fun WhatsNewModal(
     val concurrentMicTitle = androidx.compose.ui.res.stringResource(R.string.concurrent_mic_release_title)
     val concurrentMicDescription = androidx.compose.ui.res.stringResource(R.string.concurrent_mic_release_description)
     val patchNotes = remember(
-        microphoneDeviceTitle, microphoneDeviceDescription, audioBitrateTitle, audioBitrateDescription, separateAudioTitle, separateAudioDescription, separateAudioFixTitle,
+        keepAliveTitle, keepAliveDescription, microphoneDeviceTitle, microphoneDeviceDescription, audioBitrateTitle, audioBitrateDescription, separateAudioTitle, separateAudioDescription, separateAudioFixTitle,
         separateAudioFixDescription, concurrentMicTitle, concurrentMicDescription
     ) {
         listOf(
+            PatchNote(
+                title = keepAliveTitle,
+                description = keepAliveDescription,
+                category = PatchCategory.ADDED
+            ),
             PatchNote(
                 title = microphoneDeviceTitle,
                 description = microphoneDeviceDescription,

@@ -1,6 +1,6 @@
 > **Independent hcsolakoglu fork, based on v0.8.1.** Experimental Android 12 concurrent microphone assistance. Game audio, player microphone recording and simultaneous PUBG voice chat were confirmed by the user on Android 12 / MIUI 14; full route and performance validation is pending. Package `pixl.rec.hcsolakoglu` coexists with official REC. Original authorship and GPL-3.0 license are preserved. See [engineering report](docs/PUBG_MICROPHONE.md).
 >
-> This branch adds optional separate game/microphone AAC tracks and bitrate controls for local MP4 editing. Default off; streaming keeps mixed audio. [Separate audio guide and validation](docs/SEPARATE_AUDIO.md). [Keep REC running on MIUI checklist](docs/KEEP_REC_RUNNING.md). [Download separate-audio APK](https://github.com/hcsolakoglu/rec/releases/download/separate-audio-0.9.0-4/REC-hcsolakoglu-Separate-Audio-Android12.apk). The [previous microphone-fix APK](https://github.com/hcsolakoglu/rec/releases/download/pubg-mic-0.8.2-1/REC-hcsolakoglu-PUBG-Mic-Android12.apk) remains available. Upstream features and performance statements below describe original REC, not new measurements of this fork.
+> This branch adds optional separate game/microphone AAC tracks and bitrate controls for local MP4 editing. Default off; streaming keeps mixed audio. [Separate audio guide and validation](docs/SEPARATE_AUDIO.md). [Keep REC running on MIUI checklist](docs/KEEP_REC_RUNNING.md). [Download separate-audio APK](https://github.com/hcsolakoglu/rec/releases/download/separate-audio-0.9.0-5/REC-hcsolakoglu-Separate-Audio-Android12.apk). The [previous microphone-fix APK](https://github.com/hcsolakoglu/rec/releases/download/pubg-mic-0.8.2-1/REC-hcsolakoglu-PUBG-Mic-Android12.apk) remains available. Upstream features and performance statements below describe original REC, not new measurements of this fork.
 
 <div align="center">
 
@@ -13,7 +13,7 @@
 
   <br />
 
-  [![Latest Release](https://img.shields.io/badge/Release-0.9.0--audio.4-00E5FF?style=for-the-badge&logo=github&logoColor=black)](https://github.com/hcsolakoglu/rec/releases/tag/separate-audio-0.9.0-4)
+  [![Latest Release](https://img.shields.io/badge/Release-0.9.0--audio.5-00E5FF?style=for-the-badge&logo=github&logoColor=black)](https://github.com/hcsolakoglu/rec/releases/tag/separate-audio-0.9.0-5)
   [![Android Minimum SDK](https://img.shields.io/badge/Android-10%20to%2016%20Ready-00FF66?style=for-the-badge&logo=android&logoColor=black)](https://developer.android.com)
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-E50914?style=for-the-badge&logo=gnu&logoColor=white)](./LICENSE)
   [![Build Status](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-7928CA?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/pixlofficial/rec/actions)
