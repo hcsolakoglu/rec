@@ -49,7 +49,8 @@ sound can still reach any microphone acoustically; this is not digital routing.
   bounded shutdown wait, then closes the muxer. Initialization failure releases
   already-created resources and reports an error instead of silently substituting
   a mixed track. A runtime audio encoder error is logged and the recording is kept,
-  as in mixed mode. AudioEncoder tail-draining and the error-state fix (Error is no
+  as in mixed mode; a failed codec stops taking input so it cannot stall the other
+  track. AudioEncoder tail-draining and the error-state fix (Error is no
   longer overwritten by Idle) also apply to the normal path.
 
 ## Platform evidence
@@ -67,16 +68,16 @@ Validation on 2026-10-31:
 
 | Check | Result |
 | --- | --- |
-| Debug/release APK build, full tests and lint | PASS: 109 tests per variant; lint 0 errors, 121 existing warnings |
+| Debug/release APK build, full tests and lint | PASS: 110 tests per variant; lint 0 errors, 121 existing warnings |
 | PCM isolation, stereo identity, zero-copy handoff at unity gain | PASS: deterministic fixtures and identity assertions |
 | Independent gain/soft limiting and silent-buffer passthrough | PASS: fixtures, 1000 repeated buffer reuse cycles |
 | All six format arrival orders, stable track mapping and startup readiness | PASS: unit tests |
 | Normal modes, old/new JSON profiles, bitrate bounds and storage accounting | PASS: unit tests |
-| Stop order (capture quiesced before EOS, per-track EOS before muxer close and file finish), muxer release failure keeps the file, late pause/resume rejected, EOS for both encoders, failed-start muxer cleanup | PASS: controlled Android mocks |
+| Stop order (capture quiesced before EOS, per-track EOS before muxer close and file finish), muxer release failure keeps the file, failed codec stops blocking capture, late pause/resume rejected, EOS for both encoders, failed-start muxer cleanup | PASS: controlled Android mocks |
 | Audio preferences round trip, legacy defaults and bitrate clamp; pre-muxer buffer bound | PASS: unit tests |
 | APK signature/package/minSDK | PASS: same independent RSA key, v2 signature, pixl.rec.hcsolakoglu, minSDK 29 |
-| Installation on Android 12 / MIUI 14 | PASS: final signed APK updated the existing fork |
-| Two-track PUBG recording on Android 12 / MIUI 14 | PASS: user-provided final-build MP4 has game and microphone audio in distinct tracks |
+| Installation on Android 12 / MIUI 14 | PASS for 0.9.0-audio.1 (updated the existing fork); 0.9.0-audio.2 not yet installed |
+| Two-track PUBG recording on Android 12 / MIUI 14 | PASS on 0.9.0-audio.1: user-provided MP4 has game and microphone audio in distinct tracks |
 | Real AAC timestamps, counts and file decoding | PASS: 556 packets per audio track, identical PTS lists, monotonic timestamps, full decode exit 0 |
 | Selected bitrates and video codec/dimensions | PASS: both selected 192 kbps AAC-LC/48 kHz/stereo; HEVC 1600×720 |
 | Settings UI | PASS: controls inspected on device; both bitrate selectors fit and selection persists |
@@ -88,7 +89,7 @@ REC's symmetric soft limiter. Source inspection confirmed -32767; corrected the
 fixture to preserve existing limiting behavior. Final full run passed without
 disabling checks, modifying existing tests, or adding lint suppressions.
 
-The final-build PUBG sample is 12.5077 seconds. Each audio track spans 11.861333
+The 0.9.0-audio.1 PUBG sample is 12.5077 seconds. Each audio track spans 11.861333
 seconds with the same 1,138,688 decoded PCM samples (counting both channels).
 Game RMS is -34.10 dBFS and microphone RMS is -29.19 dBFS; their decoded content
 differs. Maximum audio packet gap is 21.334 ms, consistent with AAC frames at
