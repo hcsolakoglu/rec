@@ -102,8 +102,9 @@ data class RecordingConfig(
     val audioSource: AudioSource = AudioSource.INTERNAL_AND_MIC,
     val concurrentMicrophone: Boolean = false,
     val separateAudioTracks: Boolean = false,
-    val microphoneTrackBitrate: Int = 256_000,
-    val audioBitrate: Int = 256_000, // 256 kbps AAC
+    val gameTrackBitrate: Int = 256_000, // Separate mode, track 1
+    val microphoneTrackBitrate: Int = 256_000, // Separate mode, track 2
+    val audioBitrate: Int = 256_000, // 256 kbps AAC; mixed track, live streams and their archives
     val audioSampleRate: Int = 48_000, // 48 kHz standard studio rate
     val audioChannelCount: Int = 2, // Stereo
     val micGain: Float = 1.0f,
@@ -148,8 +149,12 @@ data class RecordingConfig(
     val usesSeparateAudioTracks: Boolean
         get() = separateAudioTracks && audioSource == AudioSource.INTERNAL_AND_MIC
 
+    /** Bitrate of the first audio track: game in separate mode, otherwise the mixed track. */
+    val primaryAudioBitrate: Int
+        get() = if (usesSeparateAudioTracks) gameTrackBitrate else audioBitrate
+
     val totalAudioBitrate: Int
-        get() = if (!audioSource.hasAudio) 0 else audioBitrate +
+        get() = if (!audioSource.hasAudio) 0 else primaryAudioBitrate +
             if (usesSeparateAudioTracks) microphoneTrackBitrate else 0
 
     /** RTMP supports one audio stream; its local archive keeps the same mixed output. */

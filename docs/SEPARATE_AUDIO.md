@@ -12,8 +12,11 @@ microphone AAC in that order. There is no third mixed audio track. Import both
 audio tracks into an editor, process microphone separately, then mix on export.
 Many players play only one audio track; that does not mean the other is absent.
 
-Game/mixed AAC and separate microphone AAC each offer 64, 96, 128, 192, 256 and
-320 kbps. Existing default 256 kbps, 48 kHz and stereo are preserved. For example,
+Three AAC bitrate controls each offer 64, 96, 128, 192, 256 and 320 kbps:
+Mixed audio (normal recordings, live streams and their archives; shown as Audio
+for Internal or Mic only), Track 1 · Game and Track 2 · Microphone. The two track controls appear only when separate tracks
+are active. Upgrades and old profiles use their previous audio bitrate for the
+game track. Existing default 256 kbps, 48 kHz and stereo are preserved. For example,
 192 kbps game + 96 kbps microphone totals 288 kbps: approximately 2.16 MB/min of
 audio versus 1.92 MB/min for one 256 kbps track (decimal MB, excluding overhead).
 These are size calculations, not CPU measurements. Lower bitrate can reduce
@@ -68,7 +71,7 @@ Validation on 2026-10-31:
 
 | Check | Result |
 | --- | --- |
-| Debug/release APK build, full tests and lint | PASS: 110 tests per variant; lint 0 errors, 121 existing warnings |
+| Debug/release APK build, full tests and lint | PASS: 114 tests per variant; lint 0 errors, 121 existing warnings |
 | PCM isolation, stereo identity, zero-copy handoff at unity gain | PASS: deterministic fixtures and identity assertions |
 | Independent gain/soft limiting and silent-buffer passthrough | PASS: fixtures, 1000 repeated buffer reuse cycles |
 | All six format arrival orders, stable track mapping and startup readiness | PASS: unit tests |
@@ -76,7 +79,7 @@ Validation on 2026-10-31:
 | Stop order (capture quiesced before EOS, per-track EOS before muxer close and file finish), muxer release failure keeps the file, failed codec stops blocking capture, late pause/resume rejected, EOS for both encoders, failed-start muxer cleanup | PASS: controlled Android mocks |
 | Audio preferences round trip, legacy defaults and bitrate clamp; pre-muxer buffer bound | PASS: unit tests |
 | APK signature/package/minSDK | PASS: same independent RSA key, v2 signature, pixl.rec.hcsolakoglu, minSDK 29 |
-| Installation on Android 12 / MIUI 14 | PASS for 0.9.0-audio.1 (updated the existing fork); 0.9.0-audio.2 not yet installed |
+| Installation on Android 12 / MIUI 14 | PASS for 0.9.0-audio.1 (updated the existing fork); 0.9.0-audio.2 installed and hash-verified; 0.9.0-audio.3 not yet installed |
 | Two-track PUBG recording on Android 12 / MIUI 14 | PASS on 0.9.0-audio.1: user-provided MP4 has game and microphone audio in distinct tracks |
 | Real AAC timestamps, counts and file decoding | PASS: 556 packets per audio track, identical PTS lists, monotonic timestamps, full decode exit 0 |
 | Selected bitrates and video codec/dimensions | PASS: both selected 192 kbps AAC-LC/48 kHz/stereo; HEVC 1600×720 |

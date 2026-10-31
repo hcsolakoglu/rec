@@ -78,6 +78,7 @@ object ConfigSerializer {
             put("concurrent_microphone", config.concurrentMicrophone)
             put("separate_audio_tracks", config.separateAudioTracks)
             put("microphone_track_bitrate", config.microphoneTrackBitrate)
+            put("game_track_bitrate", config.gameTrackBitrate)
             put("audio_bitrate", config.audioBitrate)
             put("audio_sample_rate", config.audioSampleRate)
             put("audio_channel_count", config.audioChannelCount)
@@ -210,6 +211,8 @@ object ConfigSerializer {
             concurrentMicrophone = audioObj.optBoolean("concurrent_microphone", false),
             separateAudioTracks = audioObj.optBoolean("separate_audio_tracks", false),
             microphoneTrackBitrate = audioObj.optInt("microphone_track_bitrate", 256_000).coerceIn(64_000, 320_000),
+            // Profiles from 0.9.0-audio.1/.2 used audio_bitrate for the game track.
+            gameTrackBitrate = audioObj.optInt("game_track_bitrate", audioBitrate).coerceIn(64_000, 320_000),
             audioBitrate = audioBitrate,
             audioSampleRate = audioSampleRate,
             audioChannelCount = audioChannelCount,

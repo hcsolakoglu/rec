@@ -197,7 +197,7 @@ class AudioCaptureManager(
                 ConcurrentMicrophoneService.connected.collect { connected ->
                     Log.i(tag, "Concurrent microphone assistance connected=$connected")
                     if (!connected) android.widget.Toast.makeText(
-                        context, pixl.rec.R.string.concurrent_mic_disconnected,
+                        context, ConcurrentMicrophoneTexts.disconnectedHint(context),
                         android.widget.Toast.LENGTH_LONG
                     ).show()
                 }

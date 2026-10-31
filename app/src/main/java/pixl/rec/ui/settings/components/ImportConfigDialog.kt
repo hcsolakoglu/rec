@@ -208,7 +208,11 @@ fun ImportConfigDialog(
                         accentColor = CyberYellow,
                         items = listOf(
                             "Audio Source" to config.audioSource.displayName,
-                            "Audio Bitrate" to "${config.audioBitrate / 1000} kbps (${config.audioSampleRate / 1000} kHz)",
+                            "Audio Bitrate" to if (config.usesSeparateAudioTracks) {
+                                "Game ${config.gameTrackBitrate / 1000} + Mic ${config.microphoneTrackBitrate / 1000} kbps, streams ${config.audioBitrate / 1000} kbps (${config.audioSampleRate / 1000} kHz)"
+                            } else {
+                                "${config.audioBitrate / 1000} kbps (${config.audioSampleRate / 1000} kHz)"
+                            },
                             "Audio Channels" to if (config.audioChannelCount == 2) "Stereo (2-ch)" else "Mono (1-ch)",
                             "Gain Balance" to String.format(Locale.US, "Mic: %.1fx  •  Internal: %.1fx", config.micGain, config.internalAudioGain)
                         )

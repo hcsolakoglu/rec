@@ -34,6 +34,7 @@ class ConfigPreferencesAudioTest {
             audioBitrate = 192_000,
             concurrentMicrophone = true,
             separateAudioTracks = true,
+            gameTrackBitrate = 128_000,
             microphoneTrackBitrate = 96_000
         )
         ConfigPreferences.saveConfig(context, saved)
@@ -42,6 +43,18 @@ class ConfigPreferencesAudioTest {
         assertEquals(true, loaded.concurrentMicrophone)
         assertEquals(true, loaded.separateAudioTracks)
         assertEquals(96_000, loaded.microphoneTrackBitrate)
+        assertEquals(128_000, loaded.gameTrackBitrate)
+    }
+
+    @Test fun upgradeKeepsGameTrackBitrateFromSharedSetting() {
+        // 0.9.0-audio.1/.2 stored only audio_bitrate, which then also drove the game track.
+        for ((stored, expected) in listOf(192_000 to 192_000, 512_000 to 320_000)) {
+            ConfigPreferences.saveConfig(context, RecordingConfig(separateAudioTracks = true, audioBitrate = stored))
+            values.remove("game_track_bitrate")
+            val loaded = ConfigPreferences.loadConfig(context, RecordingConfig())
+            assertEquals(stored, loaded.audioBitrate)
+            assertEquals(expected, loaded.gameTrackBitrate)
+        }
     }
 
     @Test fun preferencesSavedBeforeTheseOptionsLoadAsOff() {
@@ -54,9 +67,12 @@ class ConfigPreferencesAudioTest {
         assertEquals(128_000, loaded.audioBitrate)
     }
 
-    @Test fun outOfRangeStoredMicrophoneBitrateIsClamped() {
+    @Test fun outOfRangeStoredTrackBitratesAreClamped() {
         ConfigPreferences.saveConfig(context, RecordingConfig())
         values["microphone_track_bitrate"] = 1_000_000
-        assertEquals(320_000, ConfigPreferences.loadConfig(context, RecordingConfig()).microphoneTrackBitrate)
+        values["game_track_bitrate"] = 1_000
+        val loaded = ConfigPreferences.loadConfig(context, RecordingConfig())
+        assertEquals(320_000, loaded.microphoneTrackBitrate)
+        assertEquals(64_000, loaded.gameTrackBitrate)
     }
 }

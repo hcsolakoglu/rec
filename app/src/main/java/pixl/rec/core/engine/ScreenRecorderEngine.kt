@@ -201,7 +201,7 @@ class ScreenRecorderEngine(
 
             // 3. Initialize Audio Pipeline if enabled
             if (finalConfig.audioSource.hasAudio) {
-                val aEncoder = AudioEncoder(finalConfig, object : AudioEncoder.OutputListener {
+                val aEncoder = AudioEncoder(finalConfig.copy(audioBitrate = finalConfig.primaryAudioBitrate), object : AudioEncoder.OutputListener {
                     override fun onAudioFormatChanged(format: MediaFormat) {
                         handleAudioFormat(1, format)
                     }

@@ -160,7 +160,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
                 val isRec = state is RecorderState.Recording
                 val isPaused = state is RecorderState.Paused
                 val targetFramerate = _uiState.value.config.framerate.toFloat()
-                val targetBitrateMbSec = (_uiState.value.config.videoBitrate + _uiState.value.config.audioBitrate) / 8_000_000f
+                val targetBitrateMbSec = (_uiState.value.config.videoBitrate + _uiState.value.config.totalAudioBitrate) / 8_000_000f
 
                 // 1. Thermal State
                 val thermal = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && powerManager != null) {
@@ -669,6 +669,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun updateAudioBitrate(bitrate: Int) {
         updateConfigAndStorage(_uiState.value.config.copy(audioBitrate = bitrate.coerceIn(64_000, 320_000)))
+    }
+
+    fun updateGameTrackBitrate(bitrate: Int) {
+        updateConfigAndStorage(_uiState.value.config.copy(gameTrackBitrate = bitrate.coerceIn(64_000, 320_000)))
     }
 
     fun updateMicrophoneTrackBitrate(bitrate: Int) {

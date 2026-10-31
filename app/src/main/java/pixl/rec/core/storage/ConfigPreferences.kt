@@ -46,6 +46,7 @@ object ConfigPreferences {
     private const val KEY_CONCURRENT_MICROPHONE = "concurrent_microphone"
     private const val KEY_SEPARATE_AUDIO_TRACKS = "separate_audio_tracks"
     private const val KEY_MICROPHONE_TRACK_BITRATE = "microphone_track_bitrate"
+    private const val KEY_GAME_TRACK_BITRATE = "game_track_bitrate"
     private const val KEY_AUDIO_SAMPLE_RATE = "audio_sample_rate"
     private const val KEY_AUDIO_CHANNELS = "audio_channels"
     private const val KEY_MIC_GAIN = "mic_gain"
@@ -178,6 +179,11 @@ object ConfigPreferences {
             separateAudioTracks = prefs.getBoolean(KEY_SEPARATE_AUDIO_TRACKS, defaultConfig.separateAudioTracks),
             microphoneTrackBitrate = prefs.getInt(KEY_MICROPHONE_TRACK_BITRATE, defaultConfig.microphoneTrackBitrate)
                 .coerceIn(64_000, 320_000),
+            // 0.9.0-audio.1/.2 used audio_bitrate for the game track; keep that choice on upgrade.
+            gameTrackBitrate = prefs.getInt(
+                if (prefs.contains(KEY_GAME_TRACK_BITRATE)) KEY_GAME_TRACK_BITRATE else KEY_AUDIO_BITRATE,
+                defaultConfig.gameTrackBitrate
+            ).coerceIn(64_000, 320_000),
             audioSampleRate = prefs.getInt(KEY_AUDIO_SAMPLE_RATE, defaultConfig.audioSampleRate),
             audioChannelCount = prefs.getInt(KEY_AUDIO_CHANNELS, defaultConfig.audioChannelCount),
             micGain = prefs.getFloat(KEY_MIC_GAIN, defaultConfig.micGain),
@@ -220,6 +226,7 @@ object ConfigPreferences {
             .putBoolean(KEY_CONCURRENT_MICROPHONE, config.concurrentMicrophone)
             .putBoolean(KEY_SEPARATE_AUDIO_TRACKS, config.separateAudioTracks)
             .putInt(KEY_MICROPHONE_TRACK_BITRATE, config.microphoneTrackBitrate)
+            .putInt(KEY_GAME_TRACK_BITRATE, config.gameTrackBitrate)
             .putInt(KEY_AUDIO_BITRATE, config.audioBitrate)
             .putInt(KEY_AUDIO_SAMPLE_RATE, config.audioSampleRate)
             .putInt(KEY_AUDIO_CHANNELS, config.audioChannelCount)

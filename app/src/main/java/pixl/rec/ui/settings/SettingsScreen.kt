@@ -622,7 +622,7 @@ private fun VideoSettingsSection(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        val estMbPer10Min = StorageCalculator.calculateMbPerMinute(config.videoBitrate, config.audioBitrate) * 10
+        val estMbPer10Min = StorageCalculator.calculateMbPerMinute(config.videoBitrate, config.totalAudioBitrate) * 10
         Text(
             text = String.format(
                 Locale.US,
@@ -691,8 +691,9 @@ private fun AudioBitrateSelector(label: String, bitrate: Int, enabled: Boolean, 
     )
     Spacer(modifier = Modifier.height(4.dp))
     SlidingPillSelector(
-        items = listOf(64_000, 96_000, 128_000, 192_000, 256_000, 320_000),
-        selectedItem = bitrate,
+        items = AUDIO_BITRATE_OPTIONS,
+        // Imported profiles may hold other values (up to 512 kbps); highlight the nearest option, label shows the real value.
+        selectedItem = AUDIO_BITRATE_OPTIONS.minBy { kotlin.math.abs(it - bitrate) },
         itemLabel = { (it / 1000).toString() },
         enabled = enabled,
         onItemSelected = onSelected
@@ -742,7 +743,7 @@ private fun AudioSettingsSection(
         SettingsSwitch(
             iconRes = R.drawable.ic_pixel_audio,
             title = androidx.compose.ui.res.stringResource(R.string.concurrent_mic_title),
-            subtitle = androidx.compose.ui.res.stringResource(R.string.concurrent_mic_description),
+            subtitle = androidx.compose.ui.res.stringResource(R.string.concurrent_mic_summary),
             checked = config.concurrentMicrophone,
             // Keep an enabled option switchable off even after choosing a source without microphone.
             enabled = !isRecordingActive && (isMicAudioActive || config.concurrentMicrophone),
@@ -752,10 +753,11 @@ private fun AudioSettingsSection(
         )
         if (config.concurrentMicrophone) {
             Text(
-                text = androidx.compose.ui.res.stringResource(
-                    if (assistanceConnected) R.string.concurrent_mic_connected
-                    else R.string.concurrent_mic_disconnected
-                ),
+                text = if (assistanceConnected) {
+                    androidx.compose.ui.res.stringResource(R.string.concurrent_mic_connected)
+                } else {
+                    pixl.rec.core.audio.ConcurrentMicrophoneTexts.disconnectedHint(audioContext)
+                },
                 color = TextMuted,
                 style = androidx.compose.material3.MaterialTheme.typography.bodySmall
             )
@@ -765,7 +767,11 @@ private fun AudioSettingsSection(
                     try {
                         audioContext.startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
                     } catch (_: android.content.ActivityNotFoundException) {
-                        Toast.makeText(audioContext, R.string.concurrent_mic_enable, Toast.LENGTH_LONG).show()
+                        Toast.makeText(
+                            audioContext,
+                            pixl.rec.core.audio.ConcurrentMicrophoneTexts.enableHint(audioContext),
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
                 }
             ) {
@@ -774,7 +780,6 @@ private fun AudioSettingsSection(
         }
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Internal Volume Slider (0 - 100%)
         SettingsSwitch(
             iconRes = R.drawable.ic_pixel_audio,
             title = androidx.compose.ui.res.stringResource(R.string.separate_audio_title),
@@ -784,25 +789,39 @@ private fun AudioSettingsSection(
                 (config.audioSource == AudioSource.INTERNAL_AND_MIC || config.separateAudioTracks),
             onCheckedChange = viewModel::updateSeparateAudioTracks
         )
-        Spacer(modifier = Modifier.height(12.dp))
-        AudioBitrateSelector(
-            label = androidx.compose.ui.res.stringResource(
-                if (config.usesSeparateAudioTracks) R.string.game_audio_bitrate else R.string.recording_audio_bitrate
-            ),
-            bitrate = config.audioBitrate,
-            enabled = !isRecordingActive && config.audioSource.hasAudio,
-            onSelected = viewModel::updateAudioBitrate
-        )
+        // Separate mode: track 1 and 2 for local files, plus the mixed track still used by live streams.
         if (config.usesSeparateAudioTracks) {
             Spacer(modifier = Modifier.height(12.dp))
             AudioBitrateSelector(
-                label = androidx.compose.ui.res.stringResource(R.string.microphone_audio_bitrate),
+                label = androidx.compose.ui.res.stringResource(R.string.game_track_bitrate),
+                bitrate = config.gameTrackBitrate,
+                enabled = !isRecordingActive,
+                onSelected = viewModel::updateGameTrackBitrate
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            AudioBitrateSelector(
+                label = androidx.compose.ui.res.stringResource(R.string.microphone_track_bitrate),
                 bitrate = config.microphoneTrackBitrate,
                 enabled = !isRecordingActive,
                 onSelected = viewModel::updateMicrophoneTrackBitrate
             )
         }
+        Spacer(modifier = Modifier.height(12.dp))
+        AudioBitrateSelector(
+            label = androidx.compose.ui.res.stringResource(
+                when {
+                    config.usesSeparateAudioTracks -> R.string.mixed_audio_bitrate_streams
+                    config.audioSource == AudioSource.INTERNAL_AND_MIC -> R.string.mixed_audio_bitrate
+                    else -> R.string.single_audio_bitrate // Internal or Mic only: nothing is mixed
+                }
+            ),
+            bitrate = config.audioBitrate,
+            enabled = !isRecordingActive && config.audioSource.hasAudio,
+            onSelected = viewModel::updateAudioBitrate
+        )
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Internal Volume Slider (0 - 100%)
 
         val internalPercent = (config.internalAudioGain * 100).roundToInt()
         Row(
@@ -2409,3 +2428,5 @@ private fun GamingOptimizationDialog(
         }
     }
 }
+
+private val AUDIO_BITRATE_OPTIONS = listOf(64_000, 96_000, 128_000, 192_000, 256_000, 320_000)
