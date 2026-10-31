@@ -74,7 +74,10 @@ Validation on 2026-10-31:
 | Pause/resume idempotence, EOS for both encoders, repeated release, failed-start muxer cleanup | PASS: controlled Android mocks |
 | APK signature/package/minSDK | PASS: same independent RSA key, v2 signature, pixl.rec.hcsolakoglu, minSDK 29 |
 | Installation on Android 12 / MIUI 14 | PASS: final signed APK updated the existing fork |
-| Two-track PUBG recording, real AAC timestamps and independent playback | NOT TESTED: user recording requested; awaiting output |
+| Two-track PUBG recording on Android 12 / MIUI 14 | PASS: user-provided final-build MP4 has game and microphone audio in distinct tracks |
+| Real AAC timestamps, counts and file decoding | PASS: 556 packets per audio track, identical PTS lists, monotonic timestamps, full decode exit 0 |
+| Selected bitrates and video codec/dimensions | PASS: both selected 192 kbps AAC-LC/48 kHz/stereo; HEVC 1600×720 |
+| Settings UI | PASS: controls inspected on device; both bitrate selectors fit and selection persists |
 | Gameplay input latency, FPS/1% lows, CPU/memory/thermal A/B | NOT TESTED; no performance guarantee |
 | Bluetooth/headset route changes, repeated PUBG mic transitions | NOT TESTED for this two-track build |
 
@@ -83,7 +86,22 @@ REC's symmetric soft limiter. Source inspection confirmed -32767; corrected the
 fixture to preserve existing limiting behavior. Final full run passed without
 disabling checks, modifying existing tests, or adding lint suppressions.
 
-The previous single-track PUBG voice/game recording and live team voice chat
-were user-confirmed on Android 12 / MIUI 14. That is not yet proof of this new
-two-track build. No comparable gameplay frame-time/1% low/thermal benchmark has
-been performed, so no claim of unchanged competitive gameplay latency is made.
+The final-build PUBG sample is 12.5077 seconds. Each audio track spans 11.861333
+seconds with the same 1,138,688 decoded PCM samples (counting both channels).
+Game RMS is -34.10 dBFS and microphone RMS is -29.19 dBFS; their decoded content
+differs. Maximum audio packet gap is 21.334 ms, consistent with AAC frames at
+48 kHz. Android recording history reports both REC inputs as not silenced.
+An earlier launch-screen sample contained silent game PCM and active microphone
+PCM; it was not accepted as a game-audio pass. The second sample supplies actual
+PUBG sounds. Private recordings and extracted audio are not uploaded to GitHub.
+
+Measured encoded video rate in this short menu sample is 38.40 FPS, with a maximum
+frame timestamp gap of 464.344 ms. These are observed output statistics, not a
+60 FPS gameplay pass or an overhead comparison. Video begins at 0.7112 seconds,
+audio at 0; matching audio-track timestamps alone does not prove perceptual A/V
+sync. No comparable gameplay frame-time/1% low/thermal benchmark has been performed.
+
+The previous single-track PUBG recording and simultaneous live team voice chat
+were user-confirmed on Android 12 / MIUI 14. Teammate reception and repeated
+voice-chat toggles were not repeated in the new two-track sample. The underlying
+microphone capture policy and accessibility service remain byte-for-byte unchanged.
