@@ -18,6 +18,7 @@ import pixl.rec.core.model.BitrateMode
 import pixl.rec.core.model.CaptureTarget
 import pixl.rec.core.model.ColorRange
 import pixl.rec.core.model.DeviceCapabilities
+import pixl.rec.core.model.MicrophoneDevice
 import pixl.rec.core.model.PillRecallGesture
 import pixl.rec.core.model.QuickPreset
 import pixl.rec.core.model.RecorderState
@@ -661,6 +662,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun updateConcurrentMicrophone(enabled: Boolean) {
         updateConfigAndStorage(_uiState.value.config.copy(concurrentMicrophone = enabled))
+    }
+
+    fun updateMicrophoneDevice(device: MicrophoneDevice) {
+        updateConfigAndStorage(_uiState.value.config.copy(microphoneDevice = device))
     }
 
     fun updateSeparateAudioTracks(enabled: Boolean) {

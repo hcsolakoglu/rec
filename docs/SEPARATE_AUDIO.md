@@ -25,9 +25,62 @@ quality; it does not remove the cost of running two encoders.
 Streaming, including its local archive, retains one mixed AAC track. Internal,
 Mic and Mute retain their existing behavior. Old JSON profiles default to mixed
 audio; new settings survive import/export. The concurrent microphone permission
-is independent and remains explicit opt-in. This feature never sends PCM to
-PUBG, changes audio mode/routing, or creates a new microphone recorder. Speaker
+is independent and remains explicit opt-in. Separate tracks never send PCM to
+PUBG, change audio mode/routing, or create a new microphone recorder. Speaker
 sound can still reach any microphone acoustically; this is not digital routing.
+
+## Microphone choice (experimental)
+
+Config → Audio → **Microphone**: Auto, Phone or Headset, shown when Audio is Both
+or Mic. Auto (default) keeps Android's routing, which uses a plugged-in wired
+headset microphone. Phone requests the built-in microphone (the one Android names
+"bottom", if named); Headset requests wired, then USB headset, then other USB
+input. Bluetooth is never selected: its microphone needs a call-style link that
+also changes playback. REC calls `AudioRecord.setPreferredDevice` once before
+capture starts and logs the result. Without a matching input Android's default
+stays and REC shows a toast; Android also reverts when the device is unplugged.
+The choice is saved and travels with exported profiles; unknown values load as
+Auto. It applies from the next recording.
+
+This is a request, not a guarantee. Many Qualcomm audio HALs give all active
+captures on one capture path the same input device, and the most recent or
+higher-priority stream wins. While a game's voice chat holds the microphone,
+Phone may be overridden, or may move the game to the phone microphone as well,
+so teammates would hear that microphone. About 1.5 s after start REC compares
+the routed input with the requested one and shows a toast on a mismatch; a HAL
+that reroutes below Android's report stays invisible. The idle level meter
+still follows Android's default input. Not yet tested on a device.
+
+## Earphone sound in the microphone track
+
+Observed on Android 12 / MIUI 14 with wired earphones: REC's microphone track
+held a teammate's voice and game sound. Android's recording history showed REC
+and PUBG both capturing from the wired headset microphone, with media volume at
+maximum when checked. Earphones and microphone of a wired headset share one
+ground, so loud playback leaks into the microphone electrically and through the
+air. PUBG's voice chat cancels this echo inside the game; REC records the raw
+microphone for editing, so the leak stays. In a short two-track sample, the game
+track linearly explained 66% of microphone power (86% at 300–3400 Hz) at a stable
+lag. That is a playback leak, not a digital mix: separate mode never writes game
+PCM into the microphone track, and voice chat is media playback, so it also
+belongs in track 1.
+
+Remedies, most reliable first: lower media volume; use a headset whose
+microphone is better isolated, such as a USB headset; try Microphone → Phone
+within the limits above; or reduce the leak after recording with an adaptive echo
+canceller that uses track 1 as its reference. Plain noise reduction cannot remove
+it because the leak is speech and game sound, not noise.
+
+## Assistance stopped by the system
+
+Vendor cleaners can kill REC; Android logged MIUI kills named `GameClean` and
+`SwipeUpClean`. Android then marks REC's accessibility service as crashed and does
+not bind it again, although it stays enabled in Settings. Without the service,
+Android silences REC's microphone while a game holds it. REC detects this state
+(enabled but not connected) and its toast and Settings text ask to turn the entry
+off and on in Accessibility settings. To make it less likely: lock REC in recent
+apps, allow Autostart, set REC's battery saver to No restrictions and keep
+game-mode memory cleanup away from REC.
 
 ## Implementation and cost
 
@@ -71,7 +124,7 @@ Validation on 2026-10-31:
 
 | Check | Result |
 | --- | --- |
-| Debug/release APK build, full tests and lint | PASS: 114 tests per variant; lint 0 errors, 121 existing warnings |
+| Debug/release APK build, full tests and lint | PASS: 122 tests per variant; lint 0 errors, 121 existing warnings |
 | PCM isolation, stereo identity, zero-copy handoff at unity gain | PASS: deterministic fixtures and identity assertions |
 | Independent gain/soft limiting and silent-buffer passthrough | PASS: fixtures, 1000 repeated buffer reuse cycles |
 | All six format arrival orders, stable track mapping and startup readiness | PASS: unit tests |
@@ -79,11 +132,13 @@ Validation on 2026-10-31:
 | Stop order (capture quiesced before EOS, per-track EOS before muxer close and file finish), muxer release failure keeps the file, failed codec stops blocking capture, late pause/resume rejected, EOS for both encoders, failed-start muxer cleanup | PASS: controlled Android mocks |
 | Audio preferences round trip, legacy defaults and bitrate clamp; pre-muxer buffer bound | PASS: unit tests |
 | APK signature/package/minSDK | PASS: same independent RSA key, v2 signature, pixl.rec.hcsolakoglu, minSDK 29 |
-| Installation on Android 12 / MIUI 14 | PASS for 0.9.0-audio.1 (updated the existing fork); 0.9.0-audio.2 installed and hash-verified; 0.9.0-audio.3 not yet installed |
+| Installation on Android 12 / MIUI 14 | PASS for 0.9.0-audio.1 (updated the existing fork); 0.9.0-audio.2 installed and hash-verified; 0.9.0-audio.3 and 0.9.0-audio.4 not yet installed |
 | Two-track PUBG recording on Android 12 / MIUI 14 | PASS on 0.9.0-audio.1: user-provided MP4 has game and microphone audio in distinct tracks |
 | Real AAC timestamps, counts and file decoding | PASS: 556 packets per audio track, identical PTS lists, monotonic timestamps, full decode exit 0 |
 | Selected bitrates and video codec/dimensions | PASS: both selected 192 kbps AAC-LC/48 kHz/stereo; HEVC 1600×720 |
 | Settings UI | PASS: controls inspected on device; both bitrate selectors fit and selection persists |
+| Microphone choice: picker, saved/exported setting, unknown values | PASS: unit tests; device routing NOT TESTED |
+| Stopped-assistance detection (enabled in Settings, not connected) | PASS: unit tests with Settings fixtures; NOT TESTED on device |
 | Gameplay input latency, FPS/1% lows, CPU/memory/thermal A/B | NOT TESTED; no performance guarantee |
 | Bluetooth/headset route changes, repeated PUBG mic transitions | NOT TESTED for this two-track build |
 

@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.media.AudioAttributes
 import android.media.AudioFormat
+import android.media.AudioManager
 import android.media.AudioPlaybackCaptureConfiguration
 import android.media.AudioRecord
 import android.media.MediaRecorder
@@ -12,7 +13,9 @@ import android.media.projection.MediaProjection
 import android.os.Build
 import android.util.Log
 import androidx.core.content.ContextCompat
+import pixl.rec.R
 import pixl.rec.core.model.AudioSource
+import pixl.rec.core.model.MicrophoneDevice
 import pixl.rec.core.model.RecordingConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -46,6 +49,8 @@ class AudioCaptureManager(
     }
 
     private val tag = "AudioCaptureManager"
+    /** Android settles a new capture route within about a second; checked once after start. */
+    private val ROUTING_SETTLE_MS = 1500L
     private var internalAudioRecord: AudioRecord? = null
     private var micAudioRecord: AudioRecord? = null
 
@@ -53,8 +58,11 @@ class AudioCaptureManager(
     private var internalReaderJob: Job? = null
     private var micReaderJob: Job? = null
     private var assistanceJob: Job? = null
+    private var routingCheckJob: Job? = null
     private var diagnostics: AudioCaptureDiagnostics? = null
     private var prepared = false
+    private var microphoneDeviceMissing = false
+    private var requestedMicType: Int? = null
 
     private val isRunning = AtomicBoolean(false)
     private val isPaused = AtomicBoolean(false)
@@ -164,6 +172,7 @@ class AudioCaptureManager(
                         micAudioRecord = null
                     } else {
                         Log.i(tag, "Mic AudioRecord initialized successfully")
+                        micAudioRecord?.let(::applyMicrophoneDevice)
                     }
                 } catch (e: Exception) {
                     Log.e(tag, "Failed to initialize mic AudioRecord", e)
@@ -172,6 +181,23 @@ class AudioCaptureManager(
                 Log.w(tag, "RECORD_AUDIO permission not granted, skipping mic capture")
             }
         }
+    }
+
+    /**
+     * Requests the chosen microphone before capture starts. Without a match Android's default
+     * route stays; Android also reverts to it when the chosen device is unplugged.
+     */
+    private fun applyMicrophoneDevice(record: AudioRecord) {
+        val preference = config.microphoneDevice
+        if (preference == MicrophoneDevice.AUTO) return
+        val inputs = runCatching {
+            context.getSystemService(AudioManager::class.java)?.getDevices(AudioManager.GET_DEVICES_INPUTS)?.asList()
+        }.getOrElse { Log.w(tag, "Input device list unavailable", it); null }.orEmpty()
+        val device = MicrophoneDevicePicker.pick(preference, inputs, { it.type }, { it.address })
+        val applied = device != null && record.setPreferredDevice(device)
+        Log.i(tag, "Mic preference=$preference deviceId=${device?.id} deviceType=${device?.type} applied=$applied")
+        microphoneDeviceMissing = !applied
+        requestedMicType = device?.type?.takeIf { applied }
     }
 
     /**
@@ -203,6 +229,9 @@ class AudioCaptureManager(
                 }
             }
         }
+        if (microphoneDeviceMissing) scope.launch(Dispatchers.Main) {
+            android.widget.Toast.makeText(context, R.string.microphone_device_missing, android.widget.Toast.LENGTH_LONG).show()
+        }
 
         try {
             internalAudioRecord?.startRecording()
@@ -214,6 +243,19 @@ class AudioCaptureManager(
             micAudioRecord?.startRecording()
         } catch (e: Exception) {
             Log.e(tag, "Error starting mic AudioRecord", e)
+        }
+        requestedMicType?.let { wanted ->
+            // Accepted is not honored: Android can keep another app's input when both capture together.
+            routingCheckJob = scope.launch(Dispatchers.Main) {
+                delay(ROUTING_SETTLE_MS)
+                val routed = micAudioRecord?.routedDevice ?: return@launch
+                if (routed.type != wanted) {
+                    Log.w(tag, "Mic routed to type=${routed.type}, requested type=$wanted")
+                    android.widget.Toast.makeText(
+                        context, R.string.microphone_device_overridden, android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
         }
 
         isPaused.set(false)
@@ -317,6 +359,8 @@ class AudioCaptureManager(
         if (!isRunning.getAndSet(false)) return
         assistanceJob?.cancel()
         assistanceJob = null
+        routingCheckJob?.cancel()
+        routingCheckJob = null
         diagnostics?.close()
         diagnostics = null
         captureJob?.cancel()

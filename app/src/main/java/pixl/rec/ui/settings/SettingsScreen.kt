@@ -100,6 +100,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import pixl.rec.core.model.AudioSource
+import pixl.rec.core.model.MicrophoneDevice
 import pixl.rec.core.model.PillRecallGesture
 import pixl.rec.core.model.StreamConfig
 import pixl.rec.core.model.StreamPlatform
@@ -701,6 +702,38 @@ private fun AudioBitrateSelector(label: String, bitrate: Int, enabled: Boolean, 
 }
 
 @Composable
+private fun MicrophoneDeviceSelector(device: MicrophoneDevice, enabled: Boolean, onSelected: (MicrophoneDevice) -> Unit) {
+    val auto = androidx.compose.ui.res.stringResource(R.string.microphone_device_auto)
+    val phone = androidx.compose.ui.res.stringResource(R.string.microphone_device_phone)
+    val headset = androidx.compose.ui.res.stringResource(R.string.microphone_device_headset)
+    Text(
+        text = androidx.compose.ui.res.stringResource(R.string.microphone_device_title),
+        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+        color = TextMuted
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+    SlidingPillSelector(
+        items = MicrophoneDevice.entries,
+        selectedItem = device,
+        itemLabel = {
+            when (it) {
+                MicrophoneDevice.AUTO -> auto
+                MicrophoneDevice.PHONE -> phone
+                MicrophoneDevice.HEADSET -> headset
+            }
+        },
+        enabled = enabled,
+        onItemSelected = onSelected
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(
+        text = androidx.compose.ui.res.stringResource(R.string.microphone_device_description),
+        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+        color = TextMuted
+    )
+}
+
+@Composable
 private fun AudioSettingsSection(
     uiState: pixl.rec.ui.dashboard.DashboardUiState,
     isRecordingActive: Boolean,
@@ -737,6 +770,15 @@ private fun AudioSettingsSection(
             enabled = !isRecordingActive,
             onItemSelected = { viewModel.updateAudioSource(it) }
         )
+
+        if (isMicAudioActive) {
+            Spacer(modifier = Modifier.height(16.dp))
+            MicrophoneDeviceSelector(
+                device = config.microphoneDevice,
+                enabled = !isRecordingActive,
+                onSelected = viewModel::updateMicrophoneDevice
+            )
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 

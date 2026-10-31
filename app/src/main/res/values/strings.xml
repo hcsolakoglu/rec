@@ -24,6 +24,16 @@
     <string name="concurrent_mic_disconnected">Assistance off. In Accessibility settings, turn on “%1$s”. Until then, Android\'s normal microphone rules apply.</string>
     <string name="concurrent_mic_silenced">Android has silenced REC\'s microphone. Your voice is not being recorded right now.</string>
     <string name="concurrent_mic_open_settings">Open accessibility settings</string>
+    <string name="concurrent_mic_stopped">The system stopped “%1$s”, for example when a cleaner closed REC. In Accessibility settings, turn it off and on again.</string>
+    <string name="microphone_device_title">Microphone</string>
+    <string name="microphone_device_auto">Auto</string>
+    <string name="microphone_device_phone">Phone</string>
+    <string name="microphone_device_headset">Headset</string>
+    <string name="microphone_device_description">Auto follows Android, which uses a plugged-in wired headset microphone. If earphone sound reaches the microphone track, lower the volume or try Phone. While a game uses voice chat, Android may still give both apps the same microphone, and starting REC with Phone may also move the game\'s voice chat to the phone microphone. Headset means wired or USB, never Bluetooth.</string>
+    <string name="microphone_device_missing">The chosen microphone was not found, so REC records from Android\'s default microphone.</string>
+    <string name="microphone_device_overridden">Android kept another microphone for REC, likely shared with a game\'s voice chat.</string>
+    <string name="microphone_device_release_title">Microphone choice (experimental)</string>
+    <string name="microphone_device_release_description">Pick Auto, Phone or Headset microphone in Audio settings. REC now also says when the system stopped concurrent microphone assistance and how to turn it back on.</string>
     <string name="notification_channel_name">Screen Recording Service</string>
     <string name="notification_channel_desc">Active status and controls for zero-copy screen recording</string>
     <string name="notification_channel_silent_name">Screen Recording (Silent)</string>

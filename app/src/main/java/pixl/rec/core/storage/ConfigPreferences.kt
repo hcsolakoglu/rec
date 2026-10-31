@@ -7,6 +7,7 @@ import pixl.rec.core.model.BitrateMode
 import pixl.rec.core.model.CaptureTarget
 import pixl.rec.core.model.ColorRange
 import pixl.rec.core.model.HudAnimation
+import pixl.rec.core.model.MicrophoneDevice
 import pixl.rec.core.model.PillRecallGesture
 import pixl.rec.core.model.RecordingConfig
 import pixl.rec.core.model.RecordingOrientation
@@ -44,6 +45,7 @@ object ConfigPreferences {
     private const val KEY_AUDIO_SOURCE = "audio_source"
     private const val KEY_AUDIO_BITRATE = "audio_bitrate"
     private const val KEY_CONCURRENT_MICROPHONE = "concurrent_microphone"
+    private const val KEY_MICROPHONE_DEVICE = "microphone_device"
     private const val KEY_SEPARATE_AUDIO_TRACKS = "separate_audio_tracks"
     private const val KEY_MICROPHONE_TRACK_BITRATE = "microphone_track_bitrate"
     private const val KEY_GAME_TRACK_BITRATE = "game_track_bitrate"
@@ -176,6 +178,7 @@ object ConfigPreferences {
             audioSource = runCatching { AudioSource.valueOf(prefs.getString(KEY_AUDIO_SOURCE, defaultConfig.audioSource.name) ?: defaultConfig.audioSource.name) }.getOrDefault(defaultConfig.audioSource),
             audioBitrate = prefs.getInt(KEY_AUDIO_BITRATE, defaultConfig.audioBitrate),
             concurrentMicrophone = prefs.getBoolean(KEY_CONCURRENT_MICROPHONE, defaultConfig.concurrentMicrophone),
+            microphoneDevice = runCatching { MicrophoneDevice.valueOf(prefs.getString(KEY_MICROPHONE_DEVICE, defaultConfig.microphoneDevice.name) ?: defaultConfig.microphoneDevice.name) }.getOrDefault(defaultConfig.microphoneDevice),
             separateAudioTracks = prefs.getBoolean(KEY_SEPARATE_AUDIO_TRACKS, defaultConfig.separateAudioTracks),
             microphoneTrackBitrate = prefs.getInt(KEY_MICROPHONE_TRACK_BITRATE, defaultConfig.microphoneTrackBitrate)
                 .coerceIn(64_000, 320_000),
@@ -224,6 +227,7 @@ object ConfigPreferences {
             .putFloat(KEY_IFRAME_INTERVAL, config.iFrameIntervalSeconds)
             .putString(KEY_AUDIO_SOURCE, config.audioSource.name)
             .putBoolean(KEY_CONCURRENT_MICROPHONE, config.concurrentMicrophone)
+            .putString(KEY_MICROPHONE_DEVICE, config.microphoneDevice.name)
             .putBoolean(KEY_SEPARATE_AUDIO_TRACKS, config.separateAudioTracks)
             .putInt(KEY_MICROPHONE_TRACK_BITRATE, config.microphoneTrackBitrate)
             .putInt(KEY_GAME_TRACK_BITRATE, config.gameTrackBitrate)

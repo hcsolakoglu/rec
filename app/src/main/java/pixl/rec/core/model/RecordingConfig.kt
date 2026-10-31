@@ -33,6 +33,13 @@ enum class AudioSource(val displayName: String) {
 }
 
 /**
+ * Preferred microphone input. AUTO keeps Android's routing, which uses a plugged-in wired
+ * headset microphone. PHONE and HEADSET are requests: Android reverts to its default when the
+ * device is missing or unplugged, and some audio HALs give concurrent captures one microphone.
+ */
+enum class MicrophoneDevice { AUTO, PHONE, HEADSET }
+
+/**
  * Rate control strategy for video encoding.
  */
 enum class BitrateMode(val androidMode: Int, val displayName: String) {
@@ -101,6 +108,7 @@ data class RecordingConfig(
     val iFrameIntervalSeconds: Float = 1.0f,
     val audioSource: AudioSource = AudioSource.INTERNAL_AND_MIC,
     val concurrentMicrophone: Boolean = false,
+    val microphoneDevice: MicrophoneDevice = MicrophoneDevice.AUTO,
     val separateAudioTracks: Boolean = false,
     val gameTrackBitrate: Int = 256_000, // Separate mode, track 1
     val microphoneTrackBitrate: Int = 256_000, // Separate mode, track 2

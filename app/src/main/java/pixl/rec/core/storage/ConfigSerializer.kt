@@ -11,6 +11,7 @@ import pixl.rec.core.model.HudAnimation
 import pixl.rec.core.model.HudShape
 import pixl.rec.core.model.HudSnapBehavior
 import pixl.rec.core.model.HudStyleConfig
+import pixl.rec.core.model.MicrophoneDevice
 import pixl.rec.core.model.PillRecallGesture
 import pixl.rec.core.model.QuickPreset
 import pixl.rec.core.model.RecordingConfig
@@ -76,6 +77,7 @@ object ConfigSerializer {
         val audio = JSONObject().apply {
             put("audio_source", config.audioSource.name)
             put("concurrent_microphone", config.concurrentMicrophone)
+            put("microphone_device", config.microphoneDevice.name)
             put("separate_audio_tracks", config.separateAudioTracks)
             put("microphone_track_bitrate", config.microphoneTrackBitrate)
             put("game_track_bitrate", config.gameTrackBitrate)
@@ -209,6 +211,8 @@ object ConfigSerializer {
             iFrameIntervalSeconds = iFrameInterval,
             audioSource = audioSource,
             concurrentMicrophone = audioObj.optBoolean("concurrent_microphone", false),
+            microphoneDevice = runCatching { MicrophoneDevice.valueOf(audioObj.optString("microphone_device", MicrophoneDevice.AUTO.name)) }
+                .getOrDefault(MicrophoneDevice.AUTO),
             separateAudioTracks = audioObj.optBoolean("separate_audio_tracks", false),
             microphoneTrackBitrate = audioObj.optInt("microphone_track_bitrate", 256_000).coerceIn(64_000, 320_000),
             // Profiles from 0.9.0-audio.1/.2 used audio_bitrate for the game track.
