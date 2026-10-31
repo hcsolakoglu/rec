@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0-audio.4] - 2026-10-31
+
+### 🚀 Added
+- Experimental microphone choice: Auto (Android's routing), Phone or Headset (wired or USB, never Bluetooth). REC requests the device before capture and falls back to Android's default with a toast when it is missing. Some audio drivers give a game's voice chat and REC the same microphone anyway; REC now checks the route after start and shows a toast when Android kept another microphone.
+- Concurrent microphone assistance that the system stopped (for example after a vendor cleaner closed REC) is now detected: the toast and Settings text ask to turn the Accessibility entry off and on instead of only "turn on".
+
+### ⚡ Changed
+- Phone prefers the main bottom microphone, then any built-in microphone other than the rear camcorder one.
+- Docs explain why wired earphones can leak game and voice chat sound into the microphone track, and how to reduce it.
+
 ## [0.9.0-audio.3] - 2026-10-31
 
 ### ⚡ Changed
@@ -46,6 +56,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🐛 Fixed
 * Duplicate preparation/start protection and cancellation-aware audio readers.
 
+[0.9.0-audio.4]: https://github.com/hcsolakoglu/rec/compare/separate-audio-0.9.0-3...separate-audio-0.9.0-4
 [0.9.0-audio.3]: https://github.com/hcsolakoglu/rec/compare/separate-audio-0.9.0-2...separate-audio-0.9.0-3
 [0.9.0-audio.2]: https://github.com/hcsolakoglu/rec/compare/separate-audio-0.9.0-1...separate-audio-0.9.0-2
 [0.9.0-audio.1]: https://github.com/hcsolakoglu/rec/compare/pubg-mic-0.8.2-1...separate-audio-0.9.0-1
