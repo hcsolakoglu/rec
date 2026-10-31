@@ -683,6 +683,23 @@ private fun VideoSettingsSection(
 }
 
 @Composable
+private fun AudioBitrateSelector(label: String, bitrate: Int, enabled: Boolean, onSelected: (Int) -> Unit) {
+    Text(
+        text = androidx.compose.ui.res.stringResource(R.string.audio_bitrate_value, label, bitrate / 1000),
+        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+        color = TextMuted
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+    SlidingPillSelector(
+        items = listOf(64_000, 96_000, 128_000, 192_000, 256_000, 320_000),
+        selectedItem = bitrate,
+        itemLabel = { (it / 1000).toString() },
+        enabled = enabled,
+        onItemSelected = onSelected
+    )
+}
+
+@Composable
 private fun AudioSettingsSection(
     uiState: pixl.rec.ui.dashboard.DashboardUiState,
     isRecordingActive: Boolean,
@@ -757,6 +774,34 @@ private fun AudioSettingsSection(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Internal Volume Slider (0 - 100%)
+        SettingsSwitch(
+            iconRes = R.drawable.ic_pixel_audio,
+            title = androidx.compose.ui.res.stringResource(R.string.separate_audio_title),
+            subtitle = androidx.compose.ui.res.stringResource(R.string.separate_audio_description),
+            checked = config.separateAudioTracks,
+            enabled = !isRecordingActive && config.audioSource == AudioSource.INTERNAL_AND_MIC,
+            onCheckedChange = viewModel::updateSeparateAudioTracks
+        )
+        Spacer(modifier = Modifier.height(12.dp))
+        AudioBitrateSelector(
+            label = androidx.compose.ui.res.stringResource(
+                if (config.usesSeparateAudioTracks) R.string.game_audio_bitrate else R.string.recording_audio_bitrate
+            ),
+            bitrate = config.audioBitrate,
+            enabled = !isRecordingActive && config.audioSource.hasAudio,
+            onSelected = viewModel::updateAudioBitrate
+        )
+        if (config.usesSeparateAudioTracks) {
+            Spacer(modifier = Modifier.height(12.dp))
+            AudioBitrateSelector(
+                label = androidx.compose.ui.res.stringResource(R.string.microphone_audio_bitrate),
+                bitrate = config.microphoneTrackBitrate,
+                enabled = !isRecordingActive,
+                onSelected = viewModel::updateMicrophoneTrackBitrate
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
         val internalPercent = (config.internalAudioGain * 100).roundToInt()
         Row(
             modifier = Modifier.fillMaxWidth(),

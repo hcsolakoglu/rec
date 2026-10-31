@@ -323,7 +323,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
             val remainingMin = StorageCalculator.estimateRemainingMinutes(
                 availableBytes = availableBytes,
                 videoBitrateBps = finalConfig.videoBitrate,
-                audioBitrateBps = finalConfig.audioBitrate
+                audioBitrateBps = finalConfig.totalAudioBitrate
             )
 
             _uiState.value = DashboardUiState(
@@ -663,6 +663,18 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         updateConfigAndStorage(_uiState.value.config.copy(concurrentMicrophone = enabled))
     }
 
+    fun updateSeparateAudioTracks(enabled: Boolean) {
+        updateConfigAndStorage(_uiState.value.config.copy(separateAudioTracks = enabled))
+    }
+
+    fun updateAudioBitrate(bitrate: Int) {
+        updateConfigAndStorage(_uiState.value.config.copy(audioBitrate = bitrate.coerceIn(64_000, 320_000)))
+    }
+
+    fun updateMicrophoneTrackBitrate(bitrate: Int) {
+        updateConfigAndStorage(_uiState.value.config.copy(microphoneTrackBitrate = bitrate.coerceIn(64_000, 320_000)))
+    }
+
     fun updateCountdownSeconds(seconds: Int) {
         val current = _uiState.value.config
         val updated = current.copy(countdownSeconds = seconds)
@@ -857,7 +869,7 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         val remainingMin = StorageCalculator.estimateRemainingMinutes(
             availableBytes = availableBytes,
             videoBitrateBps = reconciledConfig.videoBitrate,
-            audioBitrateBps = reconciledConfig.audioBitrate
+            audioBitrateBps = reconciledConfig.totalAudioBitrate
         )
 
         _uiState.value = _uiState.value.copy(

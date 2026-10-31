@@ -146,7 +146,7 @@ class AudioEncoder(
                 }
             }
         }
-        drainJob?.cancel()
+        // Keep draining until EOS so each independently encoded track keeps its tail.
     }
 
     /**
@@ -161,6 +161,8 @@ class AudioEncoder(
 
     fun release() {
         stop()
+        drainJob?.cancel()
+        drainJob = null
         if (!eosDeferred.isCompleted) {
             eosDeferred.complete(Unit)
         }
@@ -183,7 +185,7 @@ class AudioEncoder(
         val bufferInfo = MediaCodec.BufferInfo()
         val timeoutUs = 10_000L
 
-        while (isRunning.get()) {
+        while (isRunning.get() || !eosDeferred.isCompleted) {
             try {
                 val outputBufferIndex = codec.dequeueOutputBuffer(bufferInfo, timeoutUs)
 

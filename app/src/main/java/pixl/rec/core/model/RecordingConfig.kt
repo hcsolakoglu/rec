@@ -101,6 +101,8 @@ data class RecordingConfig(
     val iFrameIntervalSeconds: Float = 1.0f,
     val audioSource: AudioSource = AudioSource.INTERNAL_AND_MIC,
     val concurrentMicrophone: Boolean = false,
+    val separateAudioTracks: Boolean = false,
+    val microphoneTrackBitrate: Int = 256_000,
     val audioBitrate: Int = 256_000, // 256 kbps AAC
     val audioSampleRate: Int = 48_000, // 48 kHz standard studio rate
     val audioChannelCount: Int = 2, // Stereo
@@ -141,13 +143,24 @@ data class RecordingConfig(
         get() = if (height != 0) width.toFloat() / height.toFloat() else 1.0f
 
     val totalBitrateMbps: Float
-        get() = (videoBitrate + if (audioSource.hasAudio) audioBitrate else 0) / 1_000_000f
+        get() = (videoBitrate + totalAudioBitrate) / 1_000_000f
+
+    val usesSeparateAudioTracks: Boolean
+        get() = separateAudioTracks && audioSource == AudioSource.INTERNAL_AND_MIC
+
+    val totalAudioBitrate: Int
+        get() = if (!audioSource.hasAudio) 0 else audioBitrate +
+            if (usesSeparateAudioTracks) microphoneTrackBitrate else 0
+
+    /** RTMP supports one audio stream; its local archive keeps the same mixed output. */
+    fun forAudioOutput(streaming: Boolean, localArchive: Boolean): RecordingConfig =
+        if (separateAudioTracks && (streaming || !localArchive)) copy(separateAudioTracks = false) else this
 
     /**
      * Estimated disk space consumption in Megabytes per Minute.
      */
     val estimatedMbPerMinute: Double
-        get() = ((videoBitrate + if (audioSource.hasAudio) audioBitrate else 0) / 8.0 / (1024.0 * 1024.0)) * 60.0
+        get() = ((videoBitrate + totalAudioBitrate) / 8.0 / (1024.0 * 1024.0)) * 60.0
 
     /**
      * Returns a copy clamped and aligned to H.264/H.265 16-pixel macroblock requirements.

@@ -1,5 +1,13 @@
 <resources>
     <string name="app_name">REC hcsolakoglu</string>
+    <string name="separate_audio_title">Separate game and microphone tracks</string>
+    <string name="separate_audio_description">Local Both recordings: audio track 1 is game, track 2 is microphone. Edit both in your video editor; players may play only one. Adds one AAC encoder. Live streams and their archives keep mixed audio. Does not change game voice chat.</string>
+    <string name="recording_audio_bitrate">Recording AAC</string>
+    <string name="game_audio_bitrate">Game AAC (mixed AAC when streaming)</string>
+    <string name="microphone_audio_bitrate">Microphone AAC</string>
+    <string name="audio_bitrate_value">%1$s: %2$d kbps</string>
+    <string name="separate_audio_release_title">Separate game and microphone audio</string>
+    <string name="separate_audio_release_description">Optional two-track local MP4 recordings for editing, with individual AAC bitrates. Off by default. Uses one extra audio encoder; video capture is unchanged.</string>
     <string name="concurrent_mic_title">Concurrent microphone (experimental)</string>
     <string name="concurrent_mic_description">Allows REC to request shared microphone input while a game uses voice chat. Enable only if you want this recording assistance. No screen content, touch actions, accessibility events or overlays are used. Android and the game may still prevent audio capture. Not verified on MIUI 14.</string>
     <string name="concurrent_mic_enable">Enable REC microphone assistance in Accessibility settings</string>

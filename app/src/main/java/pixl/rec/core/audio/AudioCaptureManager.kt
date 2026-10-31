@@ -40,6 +40,7 @@ class AudioCaptureManager(
 ) {
     interface AudioDataListener {
         fun onPcmAudioData(pcmBytes: ByteArray, length: Int, ptsUs: Long)
+        fun onSeparatePcmAudioData(game: ByteArray, mic: ByteArray, length: Int, ptsUs: Long)
         fun onAudioLevels(gameDb: Float, micDb: Float)
         fun onAudioError(e: Throwable)
     }
@@ -339,6 +340,13 @@ class AudioCaptureManager(
         bufferPool.clear()
     }
 
+    /** Finish any synchronous PCM handoff before the engine signals encoder EOS. */
+    suspend fun awaitStopped() {
+        captureJob?.join()
+        internalReaderJob?.join()
+        micReaderJob?.join()
+    }
+
     fun release() {
         stop()
         try {
@@ -360,6 +368,9 @@ class AudioCaptureManager(
     private suspend fun runMixerLoop() {
         val silenceBuf = ByteArray(CHUNK_BYTES)
         val mixedBuf = ByteArray(CHUNK_BYTES)
+        val separateTracks = if (config.usesSeparateAudioTracks) SeparatePcmTracks(
+            CHUNK_BYTES, config.internalAudioGain, config.micGain, listener::onSeparatePcmAudioData
+        ) else null
         var totalEmittedSamples = 0L
 
         var nextChunkTimeNs = System.nanoTime()
@@ -400,6 +411,19 @@ class AudioCaptureManager(
                 val micDb = if (hasMic) PcmAudioMixer.calculateDbLevel(mBuf, CHUNK_BYTES, config.micGain) else -60f
                 listener.onAudioLevels(gameDb, micDb)
                 diagnostics?.levels(gameDb, micDb, hasGame, hasMic, totalEmittedSamples, sampleRate)
+            }
+
+            if (separateTracks != null) {
+                val ptsUs = (totalEmittedSamples * 1_000_000L) / sampleRate.toLong()
+                try {
+                    // Both encoders consume synchronously before the readers can reuse these buffers.
+                    separateTracks.emit(gBuf, mBuf, CHUNK_BYTES, ptsUs)
+                } finally {
+                    if (gameChunk != null) recycleBuffer(gameChunk)
+                    if (micChunk != null) recycleBuffer(micChunk)
+                }
+                totalEmittedSamples += CHUNK_FRAME_COUNT
+                continue
             }
 
             val outputBytes: Int

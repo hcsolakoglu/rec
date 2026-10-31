@@ -54,6 +54,10 @@ class ScreenRecorderEngine(
 
     private var videoEncoder: VideoEncoder? = null
     private var audioEncoder: AudioEncoder? = null
+    private var microphoneEncoder: AudioEncoder? = null
+    private val audioOutputConfig = config.forAudioOutput(
+        streaming = streamTarget != null, localArchive = saveLocalArchive || streamTarget == null
+    )
     private var audioCaptureManager: AudioCaptureManager? = null
     private var mediaStoreWriter: MediaStoreWriter? = null
     private var virtualDisplay: VirtualDisplay? = null
@@ -61,8 +65,9 @@ class ScreenRecorderEngine(
     private var lastRecordedRotation: Int = -1
 
     private var mediaMuxer: MediaMuxer? = null
-    private var videoTrackIndex = -1
-    private var audioTrackIndex = -1
+    private val muxerTracks = MuxerTrackRegistry(
+        if (audioOutputConfig.usesSeparateAudioTracks) 2 else if (config.audioSource.hasAudio) 1 else 0
+    )
     private val isMuxerStarted = AtomicBoolean(false)
     private val muxerLock = ReentrantLock()
 
@@ -91,6 +96,7 @@ class ScreenRecorderEngine(
     }
 
     private val isRecording = AtomicBoolean(false)
+    private val isStopping = AtomicBoolean(false)
     private val isPaused = AtomicBoolean(false)
 
     private var startTimeMs = 0L
@@ -112,8 +118,7 @@ class ScreenRecorderEngine(
 
         try {
             // Reset state
-            videoTrackIndex = -1
-            audioTrackIndex = -1
+            muxerTracks.reset()
             isMuxerStarted.set(false)
             pendingSamples.clear()
 
@@ -146,7 +151,7 @@ class ScreenRecorderEngine(
 
             val gameCappedFps = if (isGameForeground && config.framerate > 60) 60 else config.framerate
 
-            val activeConfig = config.copy(
+            val activeConfig = audioOutputConfig.copy(
                 width = canvasWidth,
                 height = canvasHeight,
                 framerate = gameCappedFps
@@ -198,7 +203,7 @@ class ScreenRecorderEngine(
             if (finalConfig.audioSource.hasAudio) {
                 val aEncoder = AudioEncoder(finalConfig, object : AudioEncoder.OutputListener {
                     override fun onAudioFormatChanged(format: MediaFormat) {
-                        handleAudioFormat(format)
+                        handleAudioFormat(1, format)
                     }
 
                     override fun onAudioSampleData(buffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) {
@@ -207,10 +212,29 @@ class ScreenRecorderEngine(
 
                     override fun onAudioError(e: Throwable) {
                         Log.e(tag, "Audio encoder error", e)
+                        if (audioOutputConfig.usesSeparateAudioTracks) {
+                            engineScope.launch { handleError("Game audio encoder failed: ${e.message}", e) }
+                        }
                     }
                 })
-                aEncoder.prepare()
                 audioEncoder = aEncoder
+                aEncoder.prepare()
+
+                if (finalConfig.usesSeparateAudioTracks) {
+                    val micEncoder = AudioEncoder(
+                        finalConfig.copy(audioBitrate = finalConfig.microphoneTrackBitrate),
+                        object : AudioEncoder.OutputListener {
+                            override fun onAudioFormatChanged(format: MediaFormat) = handleAudioFormat(2, format)
+                            override fun onAudioSampleData(buffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) =
+                                writeSample(2, buffer, bufferInfo)
+                            override fun onAudioError(e: Throwable) {
+                                engineScope.launch { handleError("Microphone audio encoder failed: ${e.message}", e) }
+                            }
+                        }
+                    )
+                    microphoneEncoder = micEncoder
+                    micEncoder.prepare()
+                }
 
                 val aCapture = AudioCaptureManager(
                     context = context,
@@ -219,6 +243,11 @@ class ScreenRecorderEngine(
                     listener = object : AudioCaptureManager.AudioDataListener {
                         override fun onPcmAudioData(pcmBytes: ByteArray, length: Int, ptsUs: Long) {
                             audioEncoder?.enqueuePcmData(pcmBytes, length, ptsUs)
+                        }
+
+                        override fun onSeparatePcmAudioData(game: ByteArray, mic: ByteArray, length: Int, ptsUs: Long) {
+                            audioEncoder?.enqueuePcmData(game, length, ptsUs)
+                            microphoneEncoder?.enqueuePcmData(mic, length, ptsUs)
                         }
 
                         override fun onAudioLevels(gameDb: Float, micDb: Float) {
@@ -231,8 +260,8 @@ class ScreenRecorderEngine(
                         }
                     }
                 )
-                aCapture.prepare()
                 audioCaptureManager = aCapture
+                aCapture.prepare()
             }
 
             // 4. Start all pipelines with unified monotonic session baseline
@@ -241,6 +270,7 @@ class ScreenRecorderEngine(
             val sessionBaseTimeNs = System.nanoTime()
 
             isRecording.set(true)
+            isStopping.set(false)
             isPaused.set(false)
             startTimeMs = System.currentTimeMillis()
             totalPausedDurationMs = 0L
@@ -248,6 +278,7 @@ class ScreenRecorderEngine(
 
             vEncoder.start(engineScope, sessionBaseTimeNs)
             audioEncoder?.start(engineScope)
+            microphoneEncoder?.start(engineScope)
             audioCaptureManager?.start(engineScope, sessionBaseTimeNs)
 
             // 5. Create VirtualDisplay piped directly to the actively running VideoEncoder Input Surface (Zero-Copy)
@@ -294,7 +325,7 @@ class ScreenRecorderEngine(
      * Pauses active recording stream.
      */
     fun pause() {
-        if (isRecording.get() && isPaused.compareAndSet(false, true)) {
+        if (isRecording.get() && !isStopping.get() && isPaused.compareAndSet(false, true)) {
             pauseStartTimeMs = System.currentTimeMillis()
             videoEncoder?.pause()
             audioCaptureManager?.pause()
@@ -308,7 +339,7 @@ class ScreenRecorderEngine(
      * Resumes active recording stream.
      */
     fun resume() {
-        if (isRecording.get() && isPaused.compareAndSet(true, false)) {
+        if (isRecording.get() && !isStopping.get() && isPaused.compareAndSet(true, false)) {
             val pausedDelta = System.currentTimeMillis() - pauseStartTimeMs
             totalPausedDurationMs += pausedDelta
             videoEncoder?.resume()
@@ -321,28 +352,32 @@ class ScreenRecorderEngine(
      * Gracefully finishes encoding, finalizes Scoped Storage MP4, and resets state.
      */
     fun stop() {
-        if (!isRecording.get()) return
+        if (!isRecording.get() || !isStopping.compareAndSet(false, true)) return
         _state.value = RecorderState.Stopping
-        isRecording.set(false)
         telemetryTickerJob?.cancel()
 
         val finalDurationMs = getRecordedDurationMs()
-        val finalBytes = totalBytesWritten.get()
 
         engineScope.launch(Dispatchers.IO) {
             try {
                 // 1. Stop audio capture and encoders
                 audioCaptureManager?.stop()
+                withTimeoutOrNull(500L) { audioCaptureManager?.awaitStopped() }
                 audioEncoder?.stop()
+                microphoneEncoder?.stop()
                 videoEncoder?.stop()
 
                 // Wait for deterministic EOS signal flush from hardware encoders (up to 2000ms max)
                 withTimeoutOrNull(2000L) {
                     val videoEos = async { videoEncoder?.awaitEos() }
                     val audioEos = async { audioEncoder?.awaitEos() }
+                    val micEos = async { microphoneEncoder?.awaitEos() }
                     videoEos.await()
                     audioEos.await()
+                    micEos.await()
                 }
+                isRecording.set(false)
+                val finalBytes = totalBytesWritten.get()
 
                 // 2. Release Virtual Display & unregister rotation listener
                 displayListener?.let {
@@ -365,13 +400,10 @@ class ScreenRecorderEngine(
                         } catch (e: Exception) {
                             Log.w(tag, "Error stopping MediaMuxer", e)
                         }
-                        try {
-                            mediaMuxer?.release()
-                        } catch (e: Exception) {
-                            Log.w(tag, "Error releasing MediaMuxer", e)
-                        }
                         isMuxerStarted.set(false)
                     }
+                    mediaMuxer?.release()
+                    mediaMuxer = null
                 }
 
                 // 4. Finalize MediaStore record with accurate duration (if local archive was enabled)
@@ -386,9 +418,11 @@ class ScreenRecorderEngine(
                 }
                 videoEncoder?.release()
                 audioEncoder?.release()
+                microphoneEncoder?.release()
                 audioCaptureManager?.release()
                 videoEncoder = null
                 audioEncoder = null
+                microphoneEncoder = null
                 audioCaptureManager = null
                 mediaStoreWriter = null
 
@@ -444,6 +478,7 @@ class ScreenRecorderEngine(
         try {
             videoEncoder?.release()
             audioEncoder?.release()
+            microphoneEncoder?.release()
             audioCaptureManager?.release()
         } catch (e: Exception) {
             Log.w(tag, "Error releasing encoders", e)
@@ -453,12 +488,17 @@ class ScreenRecorderEngine(
             if (isMuxerStarted.get()) {
                 try {
                     mediaMuxer?.stop()
-                    mediaMuxer?.release()
                 } catch (e: Exception) {
                     Log.w(tag, "Error releasing MediaMuxer on release", e)
                 }
                 isMuxerStarted.set(false)
             }
+            try {
+                mediaMuxer?.release()
+            } catch (e: Exception) {
+                Log.w(tag, "Error releasing MediaMuxer", e)
+            }
+            mediaMuxer = null
         }
 
         pendingSamples.clear()
@@ -472,41 +512,31 @@ class ScreenRecorderEngine(
         streamTarget?.onVideoFormat(format)
         muxerLock.withLock {
             val muxer = mediaMuxer ?: return
-            if (videoTrackIndex < 0) {
-                videoTrackIndex = muxer.addTrack(format)
-                Log.i(tag, "Added Video track: index $videoTrackIndex")
-                checkAndStartMuxer()
-            }
+            muxerTracks.onFormat(0, format, muxer::addTrack)
+            checkAndStartMuxer()
         }
     }
 
-    private fun handleAudioFormat(format: MediaFormat) {
+    private fun handleAudioFormat(logicalTrack: Int, format: MediaFormat) {
         streamTarget?.onAudioFormat(format)
         muxerLock.withLock {
             val muxer = mediaMuxer ?: return
-            if (audioTrackIndex < 0) {
-                audioTrackIndex = muxer.addTrack(format)
-                Log.i(tag, "Added Audio track: index $audioTrackIndex")
-                checkAndStartMuxer()
-            }
+            muxerTracks.onFormat(logicalTrack, format, muxer::addTrack)
+            checkAndStartMuxer()
         }
     }
 
     private fun checkAndStartMuxer() {
-        val hasAudio = config.audioSource.hasAudio
-        val isVideoReady = videoTrackIndex >= 0
-        val isAudioReady = !hasAudio || audioTrackIndex >= 0
-
-        if (isVideoReady && isAudioReady && !isMuxerStarted.get()) {
+        if (muxerTracks.isReady && !isMuxerStarted.get()) {
             val muxer = mediaMuxer ?: return
             try {
                 muxer.start()
                 isMuxerStarted.set(true)
-                Log.i(tag, "MediaMuxer started with all configured tracks (Video: $videoTrackIndex, Audio: $audioTrackIndex)")
+                Log.i(tag, "MediaMuxer started with all configured tracks; separate audio=${audioOutputConfig.usesSeparateAudioTracks}")
 
                 // Drain queued pending samples
                 for (sample in pendingSamples) {
-                    val realTrack = if (sample.trackIndex == 0) videoTrackIndex else audioTrackIndex
+                    val realTrack = muxerTracks.indexOf(sample.trackIndex)
                     if (realTrack >= 0) {
                         try {
                             val byteBuf = ByteBuffer.wrap(sample.data, sample.offset, sample.size)
@@ -556,7 +586,7 @@ class ScreenRecorderEngine(
 
         muxerLock.withLock {
             if (isMuxerStarted.get()) {
-                val realTrack = if (logicalTrack == 0) videoTrackIndex else audioTrackIndex
+                val realTrack = muxerTracks.indexOf(logicalTrack)
                 if (realTrack >= 0) {
                     try {
                         mediaMuxer?.writeSampleData(realTrack, buffer, bufferInfo)
@@ -617,7 +647,7 @@ class ScreenRecorderEngine(
     }
 
     private fun handleError(message: String, throwable: Throwable? = null) {
-        _state.value = RecorderState.Error(message, throwable)
         release()
+        _state.value = RecorderState.Error(message, throwable)
     }
 }
