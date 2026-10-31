@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0-audio.3] - 2026-10-31
+
+### ⚡ Changed
+- Three audio bitrate controls: Mixed audio, Track 1 · Game and Track 2 · Microphone. Game no longer shares its bitrate with the mixed track used by normal recordings and live streams.
+- Upgrades keep the previous game bitrate; old profiles without the new field use their audio bitrate for the game track.
+- Clearer concurrent microphone texts; the setup hint and recording-start toast name the exact Accessibility entry to turn on.
+- Bitrate label reads "Audio" for Internal or Mic only, since nothing is mixed there.
+- Write-rate estimate and telemetry include both tracks in separate mode.
+
 ## [0.9.0-audio.2] - 2026-10-31
 
 ### 🐛 Fixed
@@ -37,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### 🐛 Fixed
 * Duplicate preparation/start protection and cancellation-aware audio readers.
 
+[0.9.0-audio.3]: https://github.com/hcsolakoglu/rec/compare/separate-audio-0.9.0-2...separate-audio-0.9.0-3
 [0.9.0-audio.2]: https://github.com/hcsolakoglu/rec/compare/separate-audio-0.9.0-1...separate-audio-0.9.0-2
 [0.9.0-audio.1]: https://github.com/hcsolakoglu/rec/compare/pubg-mic-0.8.2-1...separate-audio-0.9.0-1
 [0.8.2-pubg.1]: https://github.com/hcsolakoglu/rec/compare/v0.8.1...pubg-mic-0.8.2-1

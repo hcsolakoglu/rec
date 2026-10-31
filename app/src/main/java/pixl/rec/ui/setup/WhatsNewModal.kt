@@ -79,15 +79,22 @@ fun WhatsNewModal(
 
     val separateAudioTitle = androidx.compose.ui.res.stringResource(R.string.separate_audio_release_title)
     val separateAudioDescription = androidx.compose.ui.res.stringResource(R.string.separate_audio_release_description)
+    val audioBitrateTitle = androidx.compose.ui.res.stringResource(R.string.audio_bitrate_release_title)
+    val audioBitrateDescription = androidx.compose.ui.res.stringResource(R.string.audio_bitrate_release_description)
     val separateAudioFixTitle = androidx.compose.ui.res.stringResource(R.string.separate_audio_fix_release_title)
     val separateAudioFixDescription = androidx.compose.ui.res.stringResource(R.string.separate_audio_fix_release_description)
     val concurrentMicTitle = androidx.compose.ui.res.stringResource(R.string.concurrent_mic_release_title)
     val concurrentMicDescription = androidx.compose.ui.res.stringResource(R.string.concurrent_mic_release_description)
     val patchNotes = remember(
-        separateAudioTitle, separateAudioDescription, separateAudioFixTitle,
+        audioBitrateTitle, audioBitrateDescription, separateAudioTitle, separateAudioDescription, separateAudioFixTitle,
         separateAudioFixDescription, concurrentMicTitle, concurrentMicDescription
     ) {
         listOf(
+            PatchNote(
+                title = audioBitrateTitle,
+                description = audioBitrateDescription,
+                category = PatchCategory.CHANGED
+            ),
             PatchNote(
                 title = separateAudioFixTitle,
                 description = separateAudioFixDescription,
