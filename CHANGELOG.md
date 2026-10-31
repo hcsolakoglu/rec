@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0-audio.1] - 2026-10-31
+
+### Added
+- Optional local MP4 game and microphone audio tracks, off by default; independent AAC bitrate controls (64–320 kbps).
+- Stable game-first audio track order and tests for format arrival order, PCM isolation, gains, silence/recovery, settings compatibility and encoder EOS cleanup.
+
+### Fixed
+- Drain final AAC packets before closing the muxer; release an unstarted muxer on initialization failure.
+- Include both selected audio bitrates in local storage estimates. Video capture and concurrent microphone access are unchanged.
+
 ## [0.8.2-pubg.1] - 2026-10-31
 
 ### Added

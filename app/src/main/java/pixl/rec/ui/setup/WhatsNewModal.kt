@@ -77,8 +77,15 @@ fun WhatsNewModal(
 ) {
     val haptics = LocalHapticFeedback.current
 
-    val patchNotes = remember {
+    val separateAudioTitle = androidx.compose.ui.res.stringResource(R.string.separate_audio_release_title)
+    val separateAudioDescription = androidx.compose.ui.res.stringResource(R.string.separate_audio_release_description)
+    val patchNotes = remember(separateAudioTitle, separateAudioDescription) {
         listOf(
+            PatchNote(
+                title = separateAudioTitle,
+                description = separateAudioDescription,
+                category = PatchCategory.ADDED
+            ),
             PatchNote(
                 title = "Experimental concurrent microphone",
                 description = "Optional accessibility assistance for game voice chat. No screen access or overlays. Device validation is pending; recording may still be silenced by Android.",
