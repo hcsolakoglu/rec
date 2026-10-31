@@ -14,6 +14,13 @@ Android 12 / MIUI 14, read from Android's exit records:
 Do the phone steps once; the ADB steps are optional and persist across reboots.
 Change nothing while a match is running.
 
+From 0.9.0-audio.5 REC shows this checklist in General settings ("Keep REC
+running"). It checks what Android reports (battery optimization, background
+limits, concurrent microphone status, and on Android 11+ why the system last
+closed REC while it was recording or holding the service, within 7 days) every time you return to the screen. Vendor switches such as MIUI
+Autostart, the recents lock and Game Turbo exceptions have no Android API, so
+REC lists them for you to confirm.
+
 ## On the phone
 
 Menu names differ slightly between MIUI versions; Turkish names in parentheses.

@@ -23,6 +23,9 @@
     <!-- Haptics for UI -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!-- Lets the keep-running checklist open the one-tap battery optimization exemption. -->
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+
     <!-- Smart Game Optimization: Foreground Game Detection -->
     <uses-permission
         android:name="android.permission.PACKAGE_USAGE_STATS"

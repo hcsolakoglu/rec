@@ -11,15 +11,19 @@ object ConcurrentMicrophoneTexts {
      * For a disconnected service. If Android still lists it as enabled, the system stopped it
      * (e.g. a vendor cleaner killed REC) and only turning it off and on binds it again.
      */
-    fun disconnectedHint(context: Context): String = context.getString(
-        if (isEnabledInSettings(context)) R.string.concurrent_mic_stopped else R.string.concurrent_mic_disconnected,
+    fun disconnectedHint(context: Context): String = disconnectedHint(context, isEnabledInSettings(context))
+
+    /** Same text when the caller already read the setting off the main thread. */
+    fun disconnectedHint(context: Context, enabledInSettings: Boolean): String = context.getString(
+        if (enabledInSettings) R.string.concurrent_mic_stopped else R.string.concurrent_mic_disconnected,
         context.getString(R.string.concurrent_mic_title)
     )
 
     fun enableHint(context: Context): String =
         context.getString(R.string.concurrent_mic_enable, context.getString(R.string.concurrent_mic_title))
 
-    private fun isEnabledInSettings(context: Context): Boolean = runCatching {
+    /** True while Android lists the service as enabled, whether or not it is bound. */
+    fun isEnabledInSettings(context: Context): Boolean = runCatching {
         isListed(
             Settings.Secure.getString(context.contentResolver, Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES),
             context.packageName,

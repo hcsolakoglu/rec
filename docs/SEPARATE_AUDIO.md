@@ -125,7 +125,7 @@ Validation on 2026-10-31:
 
 | Check | Result |
 | --- | --- |
-| Debug/release APK build, full tests and lint | PASS: 122 tests per variant; lint 0 errors, 121 existing warnings |
+| Debug/release APK build, full tests and lint | PASS: 127 tests per variant; lint 0 errors, 121 existing warnings |
 | PCM isolation, stereo identity, zero-copy handoff at unity gain | PASS: deterministic fixtures and identity assertions |
 | Independent gain/soft limiting and silent-buffer passthrough | PASS: fixtures, 1000 repeated buffer reuse cycles |
 | All six format arrival orders, stable track mapping and startup readiness | PASS: unit tests |
@@ -133,7 +133,7 @@ Validation on 2026-10-31:
 | Stop order (capture quiesced before EOS, per-track EOS before muxer close and file finish), muxer release failure keeps the file, failed codec stops blocking capture, late pause/resume rejected, EOS for both encoders, failed-start muxer cleanup | PASS: controlled Android mocks |
 | Audio preferences round trip, legacy defaults and bitrate clamp; pre-muxer buffer bound | PASS: unit tests |
 | APK signature/package/minSDK | PASS: same independent RSA key, v2 signature, pixl.rec.hcsolakoglu, minSDK 29 |
-| Installation on Android 12 / MIUI 14 | PASS for 0.9.0-audio.1 (updated the existing fork); 0.9.0-audio.2 installed and hash-verified; 0.9.0-audio.3 and 0.9.0-audio.4 not yet installed |
+| Installation on Android 12 / MIUI 14 | PASS for 0.9.0-audio.1 (updated the existing fork); 0.9.0-audio.2 installed and hash-verified; 0.9.0-audio.3 not installed; 0.9.0-audio.4 installed and hash-verified; 0.9.0-audio.5 not yet installed |
 | Two-track PUBG recording on Android 12 / MIUI 14 | PASS on 0.9.0-audio.1: user-provided MP4 has game and microphone audio in distinct tracks |
 | Real AAC timestamps, counts and file decoding | PASS: 556 packets per audio track, identical PTS lists, monotonic timestamps, full decode exit 0 |
 | Selected bitrates and video codec/dimensions | PASS: both selected 192 kbps AAC-LC/48 kHz/stereo; HEVC 1600×720 |

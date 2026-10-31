@@ -1322,6 +1322,10 @@ private fun GeneralSettingsSection(
         }
     }
 
+    KeepAliveCard(concurrentMicrophone = uiState.config.concurrentMicrophone)
+
+    Spacer(modifier = Modifier.height(14.dp))
+
     // 0. Live Streaming Studio Master Disarm Switch
     SectionCard(title = "LIVE STREAMING STUDIO", titleTag = "MASTER") {
         Row(
