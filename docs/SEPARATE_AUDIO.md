@@ -80,7 +80,8 @@ Android silences REC's microphone while a game holds it. REC detects this state
 (enabled but not connected) and its toast and Settings text ask to turn the entry
 off and on in Accessibility settings. To make it less likely: lock REC in recent
 apps, allow Autostart, set REC's battery saver to No restrictions and keep
-game-mode memory cleanup away from REC.
+game-mode memory cleanup away from REC. Step-by-step:
+[Keep REC running on MIUI](KEEP_REC_RUNNING.md).
 
 ## Implementation and cost
 
