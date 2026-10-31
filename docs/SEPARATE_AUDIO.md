@@ -48,8 +48,9 @@ sound can still reach any microphone acoustically; this is not digital routing.
 - Stops readers before EOS, allows both AAC encoders to drain within the existing
   bounded shutdown wait, then closes the muxer. Initialization failure releases
   already-created resources and reports an error instead of silently substituting
-  a mixed track. AudioEncoder tail-draining and engine error reporting fixes also
-  apply to the normal path.
+  a mixed track. A runtime audio encoder error is logged and the recording is kept,
+  as in mixed mode. AudioEncoder tail-draining and the error-state fix (Error is no
+  longer overwritten by Idle) also apply to the normal path.
 
 ## Platform evidence
 
@@ -66,12 +67,13 @@ Validation on 2026-10-31:
 
 | Check | Result |
 | --- | --- |
-| Debug/release APK build, full tests and lint | PASS: 104 tests per variant; lint 0 errors, 121 existing warnings |
+| Debug/release APK build, full tests and lint | PASS: 109 tests per variant; lint 0 errors, 121 existing warnings |
 | PCM isolation, stereo identity, zero-copy handoff at unity gain | PASS: deterministic fixtures and identity assertions |
-| Independent gain/soft limiting, silent microphone and recovery | PASS: fixtures, 1000 repeated buffer reuse cycles |
+| Independent gain/soft limiting and silent-buffer passthrough | PASS: fixtures, 1000 repeated buffer reuse cycles |
 | All six format arrival orders, stable track mapping and startup readiness | PASS: unit tests |
 | Normal modes, old/new JSON profiles, bitrate bounds and storage accounting | PASS: unit tests |
-| Pause/resume idempotence, EOS for both encoders, repeated release, failed-start muxer cleanup | PASS: controlled Android mocks |
+| Stop order (capture quiesced before EOS, per-track EOS before muxer close and file finish), muxer release failure keeps the file, late pause/resume rejected, EOS for both encoders, failed-start muxer cleanup | PASS: controlled Android mocks |
+| Audio preferences round trip, legacy defaults and bitrate clamp; pre-muxer buffer bound | PASS: unit tests |
 | APK signature/package/minSDK | PASS: same independent RSA key, v2 signature, pixl.rec.hcsolakoglu, minSDK 29 |
 | Installation on Android 12 / MIUI 14 | PASS: final signed APK updated the existing fork |
 | Two-track PUBG recording on Android 12 / MIUI 14 | PASS: user-provided final-build MP4 has game and microphone audio in distinct tracks |

@@ -744,7 +744,8 @@ private fun AudioSettingsSection(
             title = androidx.compose.ui.res.stringResource(R.string.concurrent_mic_title),
             subtitle = androidx.compose.ui.res.stringResource(R.string.concurrent_mic_description),
             checked = config.concurrentMicrophone,
-            enabled = !isRecordingActive && isMicAudioActive,
+            // Keep an enabled option switchable off even after choosing a source without microphone.
+            enabled = !isRecordingActive && (isMicAudioActive || config.concurrentMicrophone),
             onCheckedChange = { enabled ->
                 viewModel.updateConcurrentMicrophone(enabled)
             }
@@ -779,7 +780,8 @@ private fun AudioSettingsSection(
             title = androidx.compose.ui.res.stringResource(R.string.separate_audio_title),
             subtitle = androidx.compose.ui.res.stringResource(R.string.separate_audio_description),
             checked = config.separateAudioTracks,
-            enabled = !isRecordingActive && config.audioSource == AudioSource.INTERNAL_AND_MIC,
+            enabled = !isRecordingActive &&
+                (config.audioSource == AudioSource.INTERNAL_AND_MIC || config.separateAudioTracks),
             onCheckedChange = viewModel::updateSeparateAudioTracks
         )
         Spacer(modifier = Modifier.height(12.dp))

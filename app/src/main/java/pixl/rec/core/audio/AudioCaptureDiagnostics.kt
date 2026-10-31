@@ -52,7 +52,8 @@ internal class AudioCaptureDiagnostics(private val context: Context) : AutoClose
             if (stream == "mic" && silenced == true && !previouslySilenced) {
                 Toast.makeText(context, R.string.concurrent_mic_silenced, Toast.LENGTH_LONG).show()
             }
-            previouslySilenced = silenced == true
+            // A transiently missing configuration must not re-arm the warning.
+            if (silenced != null) previouslySilenced = silenced
         }
         val callback = object : AudioManager.AudioRecordingCallback() {
             override fun onRecordingConfigChanged(configs: MutableList<AudioRecordingConfiguration>) {

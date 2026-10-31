@@ -34,6 +34,8 @@ class AudioEncoder(
 
     private var drainJob: Job? = null
     private val isRunning = AtomicBoolean(false)
+    // Set after a codec failure so callers on the shared capture thread stop waiting on a dead encoder.
+    @Volatile private var codecFailed = false
     private var lastPtsUs = 0L
 
     // Deterministic EOS await signal
@@ -63,6 +65,7 @@ class AudioEncoder(
     fun start(scope: CoroutineScope) {
         val codec = mediaCodec ?: throw IllegalStateException("AudioEncoder not prepared")
         codec.start()
+        codecFailed = false
         isRunning.set(true)
         lastPtsUs = 0L
         eosDeferred = CompletableDeferred()
@@ -78,7 +81,7 @@ class AudioEncoder(
      */
     fun enqueuePcmData(pcmBytes: ByteArray, length: Int, ptsUs: Long) {
         val codec = mediaCodec ?: return
-        if (!isRunning.get()) return
+        if (!isRunning.get() || codecFailed) return
 
         try {
             var offset = 0
@@ -113,6 +116,7 @@ class AudioEncoder(
                 }
             }
         } catch (e: Exception) {
+            codecFailed = true
             if (isRunning.get()) {
                 Log.e(tag, "Error queueing PCM audio buffer", e)
                 listener.onAudioError(e)
@@ -230,6 +234,7 @@ class AudioEncoder(
                     }
                 }
             } catch (e: Exception) {
+                codecFailed = true
                 if (isRunning.get()) {
                     Log.e(tag, "Error in AudioEncoder drain loop", e)
                     listener.onAudioError(e)

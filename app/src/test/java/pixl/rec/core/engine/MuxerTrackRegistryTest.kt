@@ -39,4 +39,10 @@ class MuxerTrackRegistryTest {
             assertTrue(registry.isReady)
         }
     }
+
+    @Test fun pendingBufferKeepsOriginalBoundAndAddsHeadroomOnlyForSecondAudioTrack() {
+        assertEquals(120, MuxerTrackRegistry(0).pendingSampleLimit)
+        assertEquals(120, MuxerTrackRegistry(1).pendingSampleLimit)
+        assertEquals(180, MuxerTrackRegistry(2).pendingSampleLimit)
+    }
 }

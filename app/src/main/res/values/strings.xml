@@ -8,8 +8,12 @@
     <string name="audio_bitrate_value">%1$s: %2$d kbps</string>
     <string name="separate_audio_release_title">Separate game and microphone audio</string>
     <string name="separate_audio_release_description">Optional two-track local MP4 recordings for editing, with individual AAC bitrates. Off by default. Uses one extra audio encoder; video capture is unchanged.</string>
+    <string name="separate_audio_fix_release_title">Safer separate-track recordings</string>
+    <string name="separate_audio_fix_release_description">An audio encoder error no longer deletes a two-track recording, and two-track startup gets a larger pre-muxer audio buffer.</string>
+    <string name="concurrent_mic_release_title">Experimental concurrent microphone</string>
+    <string name="concurrent_mic_release_description">Optional accessibility assistance for game voice chat. No screen access or overlays. Verified on Android 12 / MIUI 14; other devices may still be silenced by Android.</string>
     <string name="concurrent_mic_title">Concurrent microphone (experimental)</string>
-    <string name="concurrent_mic_description">Allows REC to request shared microphone input while a game uses voice chat. Enable only if you want this recording assistance. No screen content, touch actions, accessibility events or overlays are used. Android and the game may still prevent audio capture. Not verified on MIUI 14.</string>
+    <string name="concurrent_mic_description">Allows REC to request shared microphone input while a game uses voice chat. Enable only if you want this recording assistance. No screen content, touch actions, accessibility events or overlays are used. Android and the game may still prevent audio capture. Verified on Android 12 / MIUI 14 only; other devices may behave differently.</string>
     <string name="concurrent_mic_enable">Enable REC microphone assistance in Accessibility settings</string>
     <string name="concurrent_mic_connected">Assistance connected. Sharing still depends on Android and the game.</string>
     <string name="concurrent_mic_disconnected">Assistance disconnected. Normal microphone policy applies.</string>

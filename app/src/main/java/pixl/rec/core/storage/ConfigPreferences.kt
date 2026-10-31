@@ -43,6 +43,9 @@ object ConfigPreferences {
     private const val KEY_IFRAME_INTERVAL = "iframe_interval"
     private const val KEY_AUDIO_SOURCE = "audio_source"
     private const val KEY_AUDIO_BITRATE = "audio_bitrate"
+    private const val KEY_CONCURRENT_MICROPHONE = "concurrent_microphone"
+    private const val KEY_SEPARATE_AUDIO_TRACKS = "separate_audio_tracks"
+    private const val KEY_MICROPHONE_TRACK_BITRATE = "microphone_track_bitrate"
     private const val KEY_AUDIO_SAMPLE_RATE = "audio_sample_rate"
     private const val KEY_AUDIO_CHANNELS = "audio_channels"
     private const val KEY_MIC_GAIN = "mic_gain"
@@ -171,9 +174,10 @@ object ConfigPreferences {
             },
             audioSource = runCatching { AudioSource.valueOf(prefs.getString(KEY_AUDIO_SOURCE, defaultConfig.audioSource.name) ?: defaultConfig.audioSource.name) }.getOrDefault(defaultConfig.audioSource),
             audioBitrate = prefs.getInt(KEY_AUDIO_BITRATE, defaultConfig.audioBitrate),
-            concurrentMicrophone = prefs.getBoolean("concurrent_microphone", false),
-            separateAudioTracks = prefs.getBoolean("separate_audio_tracks", false),
-            microphoneTrackBitrate = prefs.getInt("microphone_track_bitrate", 256_000).coerceIn(64_000, 320_000),
+            concurrentMicrophone = prefs.getBoolean(KEY_CONCURRENT_MICROPHONE, defaultConfig.concurrentMicrophone),
+            separateAudioTracks = prefs.getBoolean(KEY_SEPARATE_AUDIO_TRACKS, defaultConfig.separateAudioTracks),
+            microphoneTrackBitrate = prefs.getInt(KEY_MICROPHONE_TRACK_BITRATE, defaultConfig.microphoneTrackBitrate)
+                .coerceIn(64_000, 320_000),
             audioSampleRate = prefs.getInt(KEY_AUDIO_SAMPLE_RATE, defaultConfig.audioSampleRate),
             audioChannelCount = prefs.getInt(KEY_AUDIO_CHANNELS, defaultConfig.audioChannelCount),
             micGain = prefs.getFloat(KEY_MIC_GAIN, defaultConfig.micGain),
@@ -213,9 +217,9 @@ object ConfigPreferences {
             .putString(KEY_BITRATE_MODE, config.bitrateMode.name)
             .putFloat(KEY_IFRAME_INTERVAL, config.iFrameIntervalSeconds)
             .putString(KEY_AUDIO_SOURCE, config.audioSource.name)
-            .putBoolean("concurrent_microphone", config.concurrentMicrophone)
-            .putBoolean("separate_audio_tracks", config.separateAudioTracks)
-            .putInt("microphone_track_bitrate", config.microphoneTrackBitrate)
+            .putBoolean(KEY_CONCURRENT_MICROPHONE, config.concurrentMicrophone)
+            .putBoolean(KEY_SEPARATE_AUDIO_TRACKS, config.separateAudioTracks)
+            .putInt(KEY_MICROPHONE_TRACK_BITRATE, config.microphoneTrackBitrate)
             .putInt(KEY_AUDIO_BITRATE, config.audioBitrate)
             .putInt(KEY_AUDIO_SAMPLE_RATE, config.audioSampleRate)
             .putInt(KEY_AUDIO_CHANNELS, config.audioChannelCount)

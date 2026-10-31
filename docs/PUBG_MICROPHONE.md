@@ -90,7 +90,7 @@ A five-second summary reuses existing independent RMS computations and records
 buffer availability plus sample-based AAC input PTS. No raw audio, screen contents,
 conversations, device addresses or third-party identifiers enter these diagnostics.
 Low RMS is never used to declare a conflict or restart anything. Callback listeners
-are removed on stop. Existing audio/video encoders and mixing math are unchanged.
+are removed on stop. This fix leaves the audio/video encoders and mixing math unchanged.
 Actual encoded timestamps and content still require an MP4 recording test.
 
 ## Device validation matrix
@@ -173,9 +173,10 @@ release or vendor implementation. Concurrent sharing is verified only for the
 reported Android 12 / MIUI 14 setup. The existing unit suite passes, but all unrelated
 features and every supported OS/device combination have not been exercised end to end.
 
-VideoEncoder, AudioEncoder, ScreenRecorderEngine, PcmAudioMixer, RecordingService,
-streaming, screenshots, replay and vault implementation have zero changes from
-v0.8.1. Remaining changes are audio lifecycle/diagnostics, opt-in service/config/UI,
+In this microphone fix, VideoEncoder, AudioEncoder, ScreenRecorderEngine, PcmAudioMixer,
+RecordingService, streaming, screenshots, replay and vault implementation have zero changes
+from v0.8.1. The later separate-tracks change edits AudioEncoder and ScreenRecorderEngine;
+see [SEPARATE_AUDIO.md](SEPARATE_AUDIO.md). Remaining changes are audio lifecycle/diagnostics, opt-in service/config/UI,
 serialization tests, fork identity/signing, and required release documentation.
 
 For an upstream PR, prepare a separate branch based on their requested target,

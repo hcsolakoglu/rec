@@ -10,6 +10,9 @@ internal class MuxerTrackRegistry(audioTrackCount: Int) {
 
     val isReady: Boolean get() = registered == indices.size
 
+    /** Samples buffered before the muxer starts: the original 120, plus 60 for a second audio track. */
+    val pendingSampleLimit: Int = PENDING_SAMPLES_PER_TRACK * maxOf(2, formats.size)
+
     fun reset() {
         formats.fill(null)
         indices.fill(-1)
@@ -27,4 +30,8 @@ internal class MuxerTrackRegistry(audioTrackCount: Int) {
     }
 
     fun indexOf(logicalTrack: Int): Int = indices[logicalTrack]
+
+    private companion object {
+        const val PENDING_SAMPLES_PER_TRACK = 60
+    }
 }

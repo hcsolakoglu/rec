@@ -211,10 +211,8 @@ class ScreenRecorderEngine(
                     }
 
                     override fun onAudioError(e: Throwable) {
+                        // Same as mixed mode: keep recording video instead of deleting the file.
                         Log.e(tag, "Audio encoder error", e)
-                        if (audioOutputConfig.usesSeparateAudioTracks) {
-                            engineScope.launch { handleError("Game audio encoder failed: ${e.message}", e) }
-                        }
                     }
                 })
                 audioEncoder = aEncoder
@@ -228,7 +226,7 @@ class ScreenRecorderEngine(
                             override fun onAudioSampleData(buffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) =
                                 writeSample(2, buffer, bufferInfo)
                             override fun onAudioError(e: Throwable) {
-                                engineScope.launch { handleError("Microphone audio encoder failed: ${e.message}", e) }
+                                Log.e(tag, "Microphone audio encoder error", e)
                             }
                         }
                     )
@@ -402,7 +400,11 @@ class ScreenRecorderEngine(
                         }
                         isMuxerStarted.set(false)
                     }
-                    mediaMuxer?.release()
+                    try {
+                        mediaMuxer?.release()
+                    } catch (e: Exception) {
+                        Log.w(tag, "Error releasing MediaMuxer", e)
+                    }
                     mediaMuxer = null
                 }
 
@@ -596,8 +598,8 @@ class ScreenRecorderEngine(
                     }
                 }
             } else {
-                // Queue until muxer starts (max 120 frames)
-                if (pendingSamples.size < 120) {
+                // Queue until muxer starts; the bound scales with track count (120 for video + one audio track).
+                if (pendingSamples.size < muxerTracks.pendingSampleLimit) {
                     val bytes = getOrCreatePendingBuffer(bufferInfo.size)
                     val oldPos = buffer.position()
                     buffer.position(bufferInfo.offset)

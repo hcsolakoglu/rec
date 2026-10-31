@@ -66,4 +66,32 @@ class AudioEncoderLifecycleTest {
             unmockkStatic(MediaCodec::class, MediaFormat::class)
         }
     }
+
+    @Test fun failedDrainStopsBlockingTheSharedCaptureThread() = runBlocking {
+        mockkStatic(MediaCodec::class, MediaFormat::class)
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        var encoder: AudioEncoder? = null
+        try {
+            every { MediaFormat.createAudioFormat(any(), any(), any()) } returns mockk(relaxed = true)
+            val codec = mockk<MediaCodec>(relaxed = true)
+            every { MediaCodec.createEncoderByType(any()) } returns codec
+            every { codec.dequeueOutputBuffer(any(), any()) } throws IllegalStateException("codec died")
+            val errors = AtomicInteger()
+            val reported = CountDownLatch(1)
+            encoder = AudioEncoder(RecordingConfig(), object : AudioEncoder.OutputListener {
+                override fun onAudioFormatChanged(format: MediaFormat) = Unit
+                override fun onAudioSampleData(buffer: ByteBuffer, bufferInfo: MediaCodec.BufferInfo) = Unit
+                override fun onAudioError(e: Throwable) { errors.incrementAndGet(); reported.countDown() }
+            }).apply { prepare(); start(scope) }
+            assertTrue(reported.await(2, TimeUnit.SECONDS))
+            repeat(100) { encoder.enqueuePcmData(ByteArray(4096), 4096, it * 21_333L) }
+            // A dead codec must not cost a 10 ms input wait per chunk or re-report every chunk.
+            verify(exactly = 0) { codec.dequeueInputBuffer(any()) }
+            assertEquals(1, errors.get())
+        } finally {
+            encoder?.release()
+            scope.cancel()
+            unmockkStatic(MediaCodec::class, MediaFormat::class)
+        }
+    }
 }
