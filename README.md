@@ -1,4 +1,4 @@
-> **Independent hcsolakoglu fork, based on v0.8.1.** Experimental Android 12 concurrent microphone assistance. Player microphone recording and simultaneous PUBG voice chat were confirmed on Android 12 / MIUI 14; full game-audio, route and performance validation is pending. Package `pixl.rec.hcsolakoglu` coexists with official REC. Original authorship and GPL-3.0 license are preserved. See [engineering report](docs/PUBG_MICROPHONE.md).
+> **Independent hcsolakoglu fork, based on v0.8.1.** Experimental Android 12 concurrent microphone assistance. Game audio, player microphone recording and simultaneous PUBG voice chat were confirmed by the user on Android 12 / MIUI 14; full route and performance validation is pending. Package `pixl.rec.hcsolakoglu` coexists with official REC. Original authorship and GPL-3.0 license are preserved. See [engineering report](docs/PUBG_MICROPHONE.md).
 >
 > [Download fork APK](https://github.com/hcsolakoglu/rec/releases/download/pubg-mic-0.8.2-1/REC-hcsolakoglu-PUBG-Mic-Android12.apk). Upstream features and performance statements below describe original REC, not new measurements of this fork.
 

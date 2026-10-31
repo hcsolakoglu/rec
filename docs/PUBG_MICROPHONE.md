@@ -2,8 +2,10 @@
 
 ## Status and provenance
 
-Experimental release with real-device Android 12 / MIUI 14 microphone-sharing evidence. Complete
-game-audio, routing, synchronization and performance acceptance remains pending.
+Experimental release with real-device Android 12 / MIUI 14 microphone-sharing evidence. The user
+confirmed game audio and their own voice together in the recording, with the
+teammate hearing them in PUBG. Full routing, synchronization and performance
+acceptance remains pending.
 Checked 2026-10-31.
 Base: upstream `v0.8.1`, commit `806a555b52187253e3f0a2b921bf5edfff4e9f5b`.
 User confirmed installed v0.8.1; ADB independently confirmed versionCode 12.
@@ -128,6 +130,7 @@ APK SHA-256 exactly matches the delivered artifact. Original REC remains install
 | Check | Status | Evidence |
 |---|---|---|
 | Player voice is present in saved recording | PASS | User listened and confirmed |
+| Both mode contains game audio and player voice together | PASS | User explicitly confirmed both are audible in the last recording |
 | PUBG teammate hears player during recording | PASS | User explicitly confirmed |
 | Concurrent REC and PUBG inputs not silenced | PASS | Actual Android recording event history |
 | Accessibility service connected without an overlay | PASS | Android bound service plus REC status UI |
@@ -145,8 +148,9 @@ The examined 86.619-second file has 2668 video frames, average encoded rate abou
 31.11 FPS, maximum video packet gap 0.117033 seconds. Video begins at 0.8528 s and
 audio at 0 s. Baseline starts differed too. These mixed lobby/menu/game samples
 are not comparable gameplay benchmarks; no 60-FPS, frame-drop, 1% low or perceptual
-A/V synchronization pass is claimed. Game audio in the mixed track has not been
-independently isolated or audibly verified. Generic logcat tags were unavailable
+A/V synchronization pass is claimed. The user audibly verified game audio together
+with microphone voice; the mixed track has not been independently separated.
+Generic logcat tags were unavailable
 in the retrieved device buffer; system recording history provided policy evidence.
 
 APK: `REC-hcsolakoglu-PUBG-Mic-Android12.apk`, 21,701,908 bytes.
