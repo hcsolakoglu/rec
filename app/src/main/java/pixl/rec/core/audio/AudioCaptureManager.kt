@@ -23,6 +23,7 @@ import kotlinx.coroutines.launch
 import java.util.Arrays
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
+import pixl.rec.service.ConcurrentMicrophoneService
 
 /**
  * Manages dual-stream audio capture:
@@ -50,6 +51,9 @@ class AudioCaptureManager(
     private var captureJob: Job? = null
     private var internalReaderJob: Job? = null
     private var micReaderJob: Job? = null
+    private var assistanceJob: Job? = null
+    private var diagnostics: AudioCaptureDiagnostics? = null
+    private var prepared = false
 
     private val isRunning = AtomicBoolean(false)
     private val isPaused = AtomicBoolean(false)
@@ -89,6 +93,8 @@ class AudioCaptureManager(
      */
     @SuppressLint("MissingPermission")
     fun prepare() {
+        if (prepared) return
+        prepared = true
         val minBufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat)
         bufferSizeInBytes = (minBufferSize * 2).coerceAtLeast(CHUNK_BYTES * 2)
 
@@ -134,24 +140,21 @@ class AudioCaptureManager(
 
             if (hasRecordPermission) {
                 try {
-                    micAudioRecord = AudioRecord(
-                        MediaRecorder.AudioSource.VOICE_RECOGNITION,
-                        sampleRate,
-                        channelConfig,
-                        audioFormat,
-                        bufferSizeInBytes
-                    )
-
-                    if (micAudioRecord?.state != AudioRecord.STATE_INITIALIZED) {
-                        Log.w(tag, "Mic AudioRecord failed to initialize with VOICE_RECOGNITION, trying MIC")
-                        micAudioRecord?.release()
-                        micAudioRecord = AudioRecord(
-                            MediaRecorder.AudioSource.MIC,
-                            sampleRate,
-                            channelConfig,
-                            audioFormat,
-                            bufferSizeInBytes
-                        )
+                    for (source in MicrophoneCapturePolicy.sources(
+                        config.concurrentMicrophone, ConcurrentMicrophoneService.connected.value
+                    )) {
+                        Log.i(tag, "Initializing mic source=$source assistance=${ConcurrentMicrophoneService.connected.value}")
+                        val candidate = runCatching {
+                            AudioRecord(source, sampleRate, channelConfig, audioFormat, bufferSizeInBytes)
+                        }.getOrElse {
+                            Log.w(tag, "Mic initialization failed source=$source", it)
+                            null
+                        }
+                        if (candidate?.state == AudioRecord.STATE_INITIALIZED) {
+                            micAudioRecord = candidate
+                            break
+                        }
+                        candidate?.release()
                     }
 
                     if (micAudioRecord?.state != AudioRecord.STATE_INITIALIZED) {
@@ -178,6 +181,27 @@ class AudioCaptureManager(
             Log.i(tag, "Audio is muted in config, skipping capture start")
             return
         }
+        if (!isRunning.compareAndSet(false, true)) return
+        diagnostics = runCatching { AudioCaptureDiagnostics(context) }.getOrNull()
+        internalAudioRecord?.let { record ->
+            runCatching { diagnostics?.observe(record, "internal") }
+                .onFailure { Log.w(tag, "Internal diagnostics unavailable", it) }
+        }
+        micAudioRecord?.let { record ->
+            runCatching { diagnostics?.observe(record, "mic") }
+                .onFailure { Log.w(tag, "Mic diagnostics unavailable", it) }
+        }
+        if (config.concurrentMicrophone && config.audioSource.hasMic) {
+            assistanceJob = scope.launch(Dispatchers.Main) {
+                ConcurrentMicrophoneService.connected.collect { connected ->
+                    Log.i(tag, "Concurrent microphone assistance connected=$connected")
+                    if (!connected) android.widget.Toast.makeText(
+                        context, pixl.rec.R.string.concurrent_mic_disconnected,
+                        android.widget.Toast.LENGTH_LONG
+                    ).show()
+                }
+            }
+        }
 
         try {
             internalAudioRecord?.startRecording()
@@ -191,7 +215,6 @@ class AudioCaptureManager(
             Log.e(tag, "Error starting mic AudioRecord", e)
         }
 
-        isRunning.set(true)
         isPaused.set(false)
         lastDbCalcTimeNs = 0L
 
@@ -202,7 +225,7 @@ class AudioCaptureManager(
         if (config.audioSource.hasInternal && internalAudioRecord != null) {
             internalReaderJob = scope.launch(Dispatchers.IO) {
                 val tempBuf = ByteArray(CHUNK_BYTES)
-                while (isRunning.get()) {
+                while (isActive && isRunning.get()) {
                     val intRecord = internalAudioRecord ?: break
                     if (isPaused.get()) {
                         delay(10)
@@ -222,6 +245,7 @@ class AudioCaptureManager(
                             }
                             internalQueue.offer(chunk)
                         } else {
+                            if (read < 0) diagnostics?.readError("internal", read)
                             delay(5)
                         }
                     } catch (e: Exception) {
@@ -238,7 +262,7 @@ class AudioCaptureManager(
         if (config.audioSource.hasMic && micAudioRecord != null) {
             micReaderJob = scope.launch(Dispatchers.IO) {
                 val tempBuf = ByteArray(CHUNK_BYTES)
-                while (isRunning.get()) {
+                while (isActive && isRunning.get()) {
                     val micRecord = micAudioRecord ?: break
                     if (isPaused.get()) {
                         delay(10)
@@ -257,6 +281,7 @@ class AudioCaptureManager(
                             }
                             micQueue.offer(chunk)
                         } else {
+                            if (read < 0) diagnostics?.readError("mic", read)
                             delay(5)
                         }
                     } catch (e: Exception) {
@@ -288,7 +313,11 @@ class AudioCaptureManager(
     }
 
     fun stop() {
-        isRunning.set(false)
+        if (!isRunning.getAndSet(false)) return
+        assistanceJob?.cancel()
+        assistanceJob = null
+        diagnostics?.close()
+        diagnostics = null
         captureJob?.cancel()
         internalReaderJob?.cancel()
         micReaderJob?.cancel()
@@ -324,6 +353,7 @@ class AudioCaptureManager(
         }
         internalAudioRecord = null
         micAudioRecord = null
+        prepared = false
         Log.i(tag, "AudioCaptureManager released")
     }
 
@@ -369,6 +399,7 @@ class AudioCaptureManager(
                 val gameDb = if (hasGame) PcmAudioMixer.calculateDbLevel(gBuf, CHUNK_BYTES, config.internalAudioGain) else -60f
                 val micDb = if (hasMic) PcmAudioMixer.calculateDbLevel(mBuf, CHUNK_BYTES, config.micGain) else -60f
                 listener.onAudioLevels(gameDb, micDb)
+                diagnostics?.levels(gameDb, micDb, hasGame, hasMic, totalEmittedSamples, sampleRate)
             }
 
             val outputBytes: Int

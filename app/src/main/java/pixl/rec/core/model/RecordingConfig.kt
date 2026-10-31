@@ -100,6 +100,7 @@ data class RecordingConfig(
     val bitrateMode: BitrateMode = BitrateMode.VBR,
     val iFrameIntervalSeconds: Float = 1.0f,
     val audioSource: AudioSource = AudioSource.INTERNAL_AND_MIC,
+    val concurrentMicrophone: Boolean = false,
     val audioBitrate: Int = 256_000, // 256 kbps AAC
     val audioSampleRate: Int = 48_000, // 48 kHz standard studio rate
     val audioChannelCount: Int = 2, // Stereo

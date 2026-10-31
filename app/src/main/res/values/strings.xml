@@ -1,5 +1,12 @@
 <resources>
-    <string name="app_name">REC</string>
+    <string name="app_name">REC hcsolakoglu</string>
+    <string name="concurrent_mic_title">Concurrent microphone (experimental)</string>
+    <string name="concurrent_mic_description">Allows REC to request shared microphone input while a game uses voice chat. Enable only if you want this recording assistance. No screen content, touch actions, accessibility events or overlays are used. Android and the game may still prevent audio capture. Not verified on MIUI 14.</string>
+    <string name="concurrent_mic_enable">Enable REC microphone assistance in Accessibility settings</string>
+    <string name="concurrent_mic_connected">Assistance connected. Sharing still depends on Android and the game.</string>
+    <string name="concurrent_mic_disconnected">Assistance disconnected. Normal microphone policy applies.</string>
+    <string name="concurrent_mic_silenced">Android has silenced REC microphone input. Recorded voice is unavailable.</string>
+    <string name="concurrent_mic_open_settings">Open accessibility settings</string>
     <string name="notification_channel_name">Screen Recording Service</string>
     <string name="notification_channel_desc">Active status and controls for zero-copy screen recording</string>
     <string name="notification_channel_silent_name">Screen Recording (Silent)</string>

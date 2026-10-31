@@ -1,3 +1,7 @@
+> **Independent hcsolakoglu fork, based on v0.8.1.** Experimental Android 12 concurrent microphone assistance. MIUI 14/PUBG behavior is not yet device-verified. Package `pixl.rec.hcsolakoglu` coexists with official REC. Original authorship and GPL-3.0 license are preserved. See [engineering report](docs/PUBG_MICROPHONE.md).
+>
+> [Download fork APK](https://github.com/hcsolakoglu/rec/releases/download/pubg-mic-0.8.2-1/REC-hcsolakoglu-PUBG-Mic-Android12.apk). Upstream features and performance statements below describe original REC, not new measurements of this fork.
+
 <div align="center">
 
   <img src="./assets/branding/icon.png" alt="PixL REC Logo" width="120" height="120" style="border-radius: 24px;" />
@@ -9,7 +13,7 @@
 
   <br />
 
-  [![Latest Release](https://img.shields.io/badge/Release-v0.8.1-00E5FF?style=for-the-badge&logo=github&logoColor=black)](https://github.com/pixlofficial/rec/releases/latest)
+  [![Latest Release](https://img.shields.io/badge/Release-0.8.2--pubg.1-00E5FF?style=for-the-badge&logo=github&logoColor=black)](https://github.com/hcsolakoglu/rec/releases/tag/pubg-mic-0.8.2-1)
   [![Android Minimum SDK](https://img.shields.io/badge/Android-10%20to%2016%20Ready-00FF66?style=for-the-badge&logo=android&logoColor=black)](https://developer.android.com)
   [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-E50914?style=for-the-badge&logo=gnu&logoColor=white)](./LICENSE)
   [![Build Status](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-7928CA?style=for-the-badge&logo=githubactions&logoColor=white)](https://github.com/pixlofficial/rec/actions)

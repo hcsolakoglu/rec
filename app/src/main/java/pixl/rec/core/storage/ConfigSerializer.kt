@@ -75,6 +75,7 @@ object ConfigSerializer {
         // 3. Audio Settings
         val audio = JSONObject().apply {
             put("audio_source", config.audioSource.name)
+            put("concurrent_microphone", config.concurrentMicrophone)
             put("audio_bitrate", config.audioBitrate)
             put("audio_sample_rate", config.audioSampleRate)
             put("audio_channel_count", config.audioChannelCount)
@@ -204,6 +205,7 @@ object ConfigSerializer {
             bitrateMode = bitrateMode,
             iFrameIntervalSeconds = iFrameInterval,
             audioSource = audioSource,
+            concurrentMicrophone = audioObj.optBoolean("concurrent_microphone", false),
             audioBitrate = audioBitrate,
             audioSampleRate = audioSampleRate,
             audioChannelCount = audioChannelCount,

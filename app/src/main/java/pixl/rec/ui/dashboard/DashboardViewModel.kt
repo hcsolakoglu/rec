@@ -659,6 +659,10 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
         updateConfigAndStorage(updated)
     }
 
+    fun updateConcurrentMicrophone(enabled: Boolean) {
+        updateConfigAndStorage(_uiState.value.config.copy(concurrentMicrophone = enabled))
+    }
+
     fun updateCountdownSeconds(seconds: Int) {
         val current = _uiState.value.config
         val updated = current.copy(countdownSeconds = seconds)
@@ -845,6 +849,9 @@ class DashboardViewModel(application: Application) : AndroidViewModel(applicatio
 
         // Persist to SharedPreferences immediately
         ConfigPreferences.saveConfig(getApplication(), reconciledConfig)
+        if (!reconciledConfig.concurrentMicrophone) {
+            pixl.rec.service.ConcurrentMicrophoneService.disable()
+        }
 
         val availableBytes = _uiState.value.availableStorageBytes
         val remainingMin = StorageCalculator.estimateRemainingMinutes(

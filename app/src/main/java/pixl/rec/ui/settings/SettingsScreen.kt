@@ -691,6 +691,8 @@ private fun AudioSettingsSection(
 ) {
     val config = uiState.config
     val gameDb = if (recorderState is RecorderState.Recording) recorderState.gameAudioDb else -60f
+    val audioContext = androidx.compose.ui.platform.LocalContext.current
+    val assistanceConnected by pixl.rec.service.ConcurrentMicrophoneService.connected.collectAsState()
     val micDb = if (recorderState is RecorderState.Recording) recorderState.micAudioDb else -60f
 
     val isInternalAudioActive = config.audioSource == AudioSource.INTERNAL_AND_MIC || config.audioSource == AudioSource.INTERNAL_ONLY
@@ -718,6 +720,40 @@ private fun AudioSettingsSection(
             onItemSelected = { viewModel.updateAudioSource(it) }
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        SettingsSwitch(
+            iconRes = R.drawable.ic_pixel_audio,
+            title = androidx.compose.ui.res.stringResource(R.string.concurrent_mic_title),
+            subtitle = androidx.compose.ui.res.stringResource(R.string.concurrent_mic_description),
+            checked = config.concurrentMicrophone,
+            enabled = !isRecordingActive && isMicAudioActive,
+            onCheckedChange = { enabled ->
+                viewModel.updateConcurrentMicrophone(enabled)
+            }
+        )
+        if (config.concurrentMicrophone) {
+            Text(
+                text = androidx.compose.ui.res.stringResource(
+                    if (assistanceConnected) R.string.concurrent_mic_connected
+                    else R.string.concurrent_mic_disconnected
+                ),
+                color = TextMuted,
+                style = androidx.compose.material3.MaterialTheme.typography.bodySmall
+            )
+            androidx.compose.material3.TextButton(
+                enabled = !isRecordingActive,
+                onClick = {
+                    try {
+                        audioContext.startActivity(Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS))
+                    } catch (_: android.content.ActivityNotFoundException) {
+                        Toast.makeText(audioContext, R.string.concurrent_mic_enable, Toast.LENGTH_LONG).show()
+                    }
+                }
+            ) {
+                Text(androidx.compose.ui.res.stringResource(R.string.concurrent_mic_open_settings))
+            }
+        }
         Spacer(modifier = Modifier.height(16.dp))
 
         // Internal Volume Slider (0 - 100%)

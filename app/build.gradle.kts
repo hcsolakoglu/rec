@@ -22,7 +22,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "pixl.rec"
+        applicationId = "pixl.rec.hcsolakoglu"
         minSdk = 29
         targetSdk = 35
         versionCode = appVersionCode
@@ -31,11 +31,21 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    val forkKeystore = System.getenv("REC_SIGNING_KEYSTORE")
+    if (!forkKeystore.isNullOrBlank()) {
+        signingConfigs.create("forkRelease") {
+            storeFile = file(forkKeystore)
+            storePassword = System.getenv("REC_SIGNING_PASSWORD")
+            keyAlias = "rec-fork"
+            keyPassword = System.getenv("REC_SIGNING_PASSWORD")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.findByName("forkRelease")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

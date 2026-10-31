@@ -1,0 +1,127 @@
+# PUBG microphone assistance: engineering and validation
+
+## Status and provenance
+
+Experimental candidate, not a verified MIUI/PUBG fix. Checked 2026-10-31.
+Base: upstream `v0.8.1`, commit `806a555b52187253e3f0a2b921bf5edfff4e9f5b`.
+User confirmed installed v0.8.1; ADB independently confirmed versionCode 12.
+GitHub REST resolves both supplied owner names to **pixlbuilds/rec**. Latest public
+release remains v0.8.1; main declares 0.10.1. No broad main upgrade was taken.
+
+## Root cause boundaries and research
+
+A. Android normally permits only one ordinary app to receive microphone PCM.
+The losing AudioRecord can remain initialized/recording while its samples are
+silenced. Foreground service alone does not waive this rule. Privacy-sensitive
+sources and communication-mode ownership affect priority. Restarting repeatedly
+cannot override policy. See [Android sharing rules](https://developer.android.com/media/platform/sharing-audio-input)
+and [AOSP concurrency](https://source.android.com/docs/core/audio/concurrent).
+
+B. Playback capture is separate. Only eligible MEDIA, GAME and UNKNOWN playback
+with permissive capture policy can enter REC. If PUBG switches to communication
+usage or disallows capture, accessibility assistance cannot restore that output.
+Teammates' voices are not guaranteed. See [playback capture](https://developer.android.com/media/platform/av-capture)
+and [configuration API](https://developer.android.com/reference/android/media/AudioPlaybackCaptureConfiguration).
+
+C. REC v0.8.1 creates playback and mic AudioRecords, tries VOICE_RECOGNITION then
+MIC during initialization, reads them independently, and mixes stereo PCM into
+one AAC input. Missing buffers become silence to preserve timing. That existing
+behavior is not proof that either stream contains sound. Mixer sample clock and
+AudioEncoder timestamp clamping are unchanged. Duplicate prepare/start could
+allocate another recorder/job; this patch makes those calls idempotent and makes
+reader loops cancellation-aware. Route/silence changes do not restart projection,
+video, AAC or the microphone. Framework-managed unsilencing is observed directly.
+
+### Why accessibility plus VOICE_RECOGNITION
+
+The [Android 12 AudioPolicyService source](https://android.googlesource.com/platform/frameworks/av/+/refs/tags/android-12.0.0_r1/services/audiopolicy/service/AudioPolicyService.cpp)
+checks accessibility **UID**, not which Java Service constructed AudioRecord.
+Its accessibility branch permits VOICE_RECOGNITION when `isA11yOnTop` holds; that
+helper includes process states TOP through BOUND_FOREGROUND_SERVICE. Other branches
+remain constrained by sensitive capture and communication ownership. The
+[AccessibilityManagerService source](https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-12.0.0_r1/services/accessibility/java/com/android/server/accessibility/AccessibilityManagerService.java)
+passes bound-service UIDs to AudioManager. Therefore this fork keeps AudioRecord
+ownership in its existing manager, in the same UID/process as a genuinely bound
+accessibility service. No visible overlay is added. OEM equivalence is a testable
+hypothesis, not guaranteed by the general documentation's "UI on top" wording.
+
+[RootEncoder #1848](https://github.com/pedroSG94/RootEncoder/issues/1848) and its
+[wiki](https://github.com/pedroSG94/RootEncoder/wiki/Recording-audio-while-other-app-use-the-microphone)
+report accessibility-assisted MIC capture. The wiki's permission example returns
+true when ACCESSIBILITY_ENABLED is zero and does not verify the particular service.
+Its broad event subscriptions/window access are unnecessary for UID registration.
+None of that sample code was copied. This fork observes its actual service connection
+and declares no event types, window access, gestures or overlays.
+
+[#2067](https://github.com/pedroSG94/RootEncoder/issues/2067) reports DEFAULT working
+on a different rooted Xiaomi Android 14 device. Its claim that an uninitialized Java local int
+implicitly becomes zero is invalid Java reasoning. RootEncoder
+[MixAudioSource](https://github.com/pedroSG94/RootEncoder/blob/f1bbda7ca6fb92bb599206fda2b97745ac11b7f2/encoder/src/main/java/com/pedro/encoder/input/sources/audio/MixAudioSource.kt)
+comments report DEFAULT/MIC silence on Android 12/14. These reports do not isolate
+identical policy/root/accessibility conditions. DEFAULT is not promoted to a fix;
+VOICE_COMMUNICATION/CAMCORDER are rejected because they can take the game microphone.
+No proprietary Glip code or decompiled control flow was reused.
+
+[CaptureCap](https://github.com/yepgoryo/CaptureCap/tree/ee98832d3ae60aa02628a3fc8c80039537f9e739)
+uses standard playback capture plus MIC and also contains Shizuku options; those
+options are outside this task. No code/dependency was imported. Xiaomi's public
+screen-recorder help does not establish concurrent capture for Android 12 / MIUI 14.
+Glip behavior reports are comparison hypotheses, not a transferable guarantee.
+
+## Implementation and privacy
+
+The option is off by default, preserved by preferences and JSON import/export;
+old profiles default off. Turning it off disables this service. Permission must
+be enabled explicitly in Android accessibility settings. Service disconnects are
+visible in settings and produce a recording-time warning. Process death clears
+connection state. No worker, overlay, external audio framework or native library
+is added. When permission is missing, normal source selection remains unchanged.
+When connected, concurrent mode retains VOICE_RECOGNITION without falling back to
+MIC, which would lose the documented exception.
+
+[AudioRecord callbacks](https://developer.android.com/reference/android/media/AudioRecord.html)
+and [isClientSilenced](https://developer.android.com/reference/android/media/AudioRecordingConfiguration)
+log source, recording state, policy silence, numeric route type/id and mode changes.
+A five-second summary reuses existing independent RMS computations and records
+buffer availability plus sample-based AAC input PTS. No raw audio, screen contents,
+conversations, device addresses or third-party identifiers enter these diagnostics.
+Low RMS is never used to declare a conflict or restart anything. Callback listeners
+are removed on stop. Existing audio/video encoders and mixing math are unchanged.
+Actual encoded timestamps and content still require an MP4 recording test.
+
+## Device validation matrix
+
+Test environment: Android 12/API31, MIUI 14. Exact hardware model is intentionally omitted.
+
+| Case | Scenario | Status |
+|---|---|---|
+| A | PUBG mic off, Both | NOT TESTED |
+| B | PUBG mic on before REC, Both | NOT TESTED |
+| C | Off to on during Both | NOT TESTED |
+| D | On to off during Both | NOT TESTED |
+| E | Repeated transitions | NOT TESTED |
+| F | PUBG mic on, Internal only | NOT TESTED |
+| G | PUBG mic on, Mic only | NOT TESTED |
+| Routes | Speaker / wired headset / Bluetooth | NOT TESTED |
+| Performance | FPS, 1% low, drops, temperature, CPU, memory comparison | NOT TESTED |
+
+Run with intentional game sound and spoken test phrases, not a silent lobby.
+Check both the saved recording and whether a teammate actually hears the player.
+Record transition timestamps; compare original v0.8.1 using identical settings.
+A real device being connected is not itself a successful microphone-sharing test.
+
+## Install and test
+
+Install the independently signed APK beside `pixl.rec`; no original data is removed.
+Use Settings > Audio > Both, enable Concurrent microphone, then open accessibility
+settings and enable **REC hcsolakoglu / Concurrent microphone (experimental)**.
+Return to REC and confirm "Assistance connected". Keep floating overlays disabled.
+Apply the existing 1600x720 landscape, hardware HEVC, 60 FPS, 6 Mbps VBR,
+1-second keyframes, AAC-LC 48 kHz stereo/256 kbps profile. No video setting was changed
+by this patch. If Android reports silencing, the recording must not be treated as
+successful voice capture. Disable the option to return to normal behavior.
+
+Build with JDK17 and Android SDK36: `./gradlew assembleDebug assembleRelease test lint`.
+Release signing uses REC_SIGNING_KEYSTORE and REC_SIGNING_PASSWORD environment
+variables and alias rec-fork; without them the release is unsigned. Never commit
+keys/passwords. GPL-3.0 and upstream attribution remain intact.

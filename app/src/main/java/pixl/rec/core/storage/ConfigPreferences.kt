@@ -171,6 +171,7 @@ object ConfigPreferences {
             },
             audioSource = runCatching { AudioSource.valueOf(prefs.getString(KEY_AUDIO_SOURCE, defaultConfig.audioSource.name) ?: defaultConfig.audioSource.name) }.getOrDefault(defaultConfig.audioSource),
             audioBitrate = prefs.getInt(KEY_AUDIO_BITRATE, defaultConfig.audioBitrate),
+            concurrentMicrophone = prefs.getBoolean("concurrent_microphone", false),
             audioSampleRate = prefs.getInt(KEY_AUDIO_SAMPLE_RATE, defaultConfig.audioSampleRate),
             audioChannelCount = prefs.getInt(KEY_AUDIO_CHANNELS, defaultConfig.audioChannelCount),
             micGain = prefs.getFloat(KEY_MIC_GAIN, defaultConfig.micGain),
@@ -210,6 +211,7 @@ object ConfigPreferences {
             .putString(KEY_BITRATE_MODE, config.bitrateMode.name)
             .putFloat(KEY_IFRAME_INTERVAL, config.iFrameIntervalSeconds)
             .putString(KEY_AUDIO_SOURCE, config.audioSource.name)
+            .putBoolean("concurrent_microphone", config.concurrentMicrophone)
             .putInt(KEY_AUDIO_BITRATE, config.audioBitrate)
             .putInt(KEY_AUDIO_SAMPLE_RATE, config.audioSampleRate)
             .putInt(KEY_AUDIO_CHANNELS, config.audioChannelCount)

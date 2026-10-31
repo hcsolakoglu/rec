@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.8.2-pubg.1] - 2026-10-31
+
+### Added
+* Explicit opt-in concurrent microphone assistance with no accessibility events, window access or overlays. Android 12 policy candidate; MIUI/PUBG device verification pending.
+* Throttled recording configuration, routing, policy silencing and independent stream-level diagnostics.
+* Independent package identity and release signing support for coexistence with official REC.
+
+### Fixed
+* Duplicate preparation/start protection and cancellation-aware audio readers.
+
+[0.8.2-pubg.1]: https://github.com/hcsolakoglu/rec/compare/v0.8.1...fix/pubg-concurrent-microphone
+
 ## [0.8.1] - 2026-09-08
 
 ### 🚀 Added

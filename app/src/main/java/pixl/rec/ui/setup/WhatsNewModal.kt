@@ -80,6 +80,11 @@ fun WhatsNewModal(
     val patchNotes = remember {
         listOf(
             PatchNote(
+                title = "Experimental concurrent microphone",
+                description = "Optional accessibility assistance for game voice chat. No screen access or overlays. Device validation is pending; recording may still be silenced by Android.",
+                category = PatchCategory.ADDED
+            ),
+            PatchNote(
                 title = "Multi-Destination Multistreaming",
                 description = "Broadcast live simultaneously to multiple RTMP destinations (YouTube Live, Twitch, Kick, and custom ingest servers) with zero-copy buffer slicing.",
                 category = PatchCategory.ADDED
