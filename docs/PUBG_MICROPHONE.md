@@ -2,7 +2,9 @@
 
 ## Status and provenance
 
-Experimental candidate, not a verified MIUI/PUBG fix. Checked 2026-10-31.
+Experimental release with real-device Android 12 / MIUI 14 microphone-sharing evidence. Complete
+game-audio, routing, synchronization and performance acceptance remains pending.
+Checked 2026-10-31.
 Base: upstream `v0.8.1`, commit `806a555b52187253e3f0a2b921bf5edfff4e9f5b`.
 User confirmed installed v0.8.1; ADB independently confirmed versionCode 12.
 GitHub REST resolves both supplied owner names to **pixlbuilds/rec**. Latest public
@@ -93,17 +95,81 @@ Actual encoded timestamps and content still require an MP4 recording test.
 
 Test environment: Android 12/API31, MIUI 14. Exact hardware model is intentionally omitted.
 
+Baseline reproduced on the actual phone: original v0.8.1 VOICE_RECOGNITION input
+changed from `silenced:false` to `silenced:true` when PUBG enabled its
+VOICE_COMMUNICATION input. PUBG remained `silenced:false`. This directly establishes
+policy denial in the original app, independently of whether the lobby was audible.
+The baseline MP4 has HEVC 1600x720 and one AAC 48 kHz stereo track; 2,934 video frames
+over 71.166 seconds (about 41.23 average FPS) include settings/lobby transitions.
+This is not an equivalent gameplay benchmark or evidence of capture frame drops.
+
+Build verification: `assembleDebug assembleRelease test lint --continue` PASS.
+90 tests per variant, zero failures/errors/skips; lint zero errors, 121 warnings.
+The first new round-trip fixture failed because upstream import aligns 1080 to
+1088. It was corrected to the actual requested aligned 1600x720 profile; no existing
+test or assertion was removed. Final release signature v2 verifies, minSdk29,
+targetSdk35, ARM64 included. Release installed and launched on Android 12 / MIUI 14; installed
+APK SHA-256 exactly matches the delivered artifact. Original REC remains installed.
+
 | Case | Scenario | Status |
 |---|---|---|
-| A | PUBG mic off, Both | NOT TESTED |
-| B | PUBG mic on before REC, Both | NOT TESTED |
-| C | Off to on during Both | NOT TESTED |
-| D | On to off during Both | NOT TESTED |
+| A | PUBG mic off, Both, including audible game output | NOT TESTED |
+| B | PUBG mic on before REC, Both, including audible game output | NOT TESTED |
+| C | Off to on during Both, full audio acceptance | NOT TESTED |
+| D | On to off during Both, full audio acceptance | NOT TESTED |
 | E | Repeated transitions | NOT TESTED |
 | F | PUBG mic on, Internal only | NOT TESTED |
 | G | PUBG mic on, Mic only | NOT TESTED |
 | Routes | Speaker / wired headset / Bluetooth | NOT TESTED |
 | Performance | FPS, 1% low, drops, temperature, CPU, memory comparison | NOT TESTED |
+
+### Verified subset from the user's manual test
+
+| Check | Status | Evidence |
+|---|---|---|
+| Player voice is present in saved recording | PASS | User listened and confirmed |
+| PUBG teammate hears player during recording | PASS | User explicitly confirmed |
+| Concurrent REC and PUBG inputs not silenced | PASS | Actual Android recording event history |
+| Accessibility service connected without an overlay | PASS | Android bound service plus REC status UI |
+| Signed release installs beside official REC | PASS | Package query and installed APK hash |
+| HEVC 1600x720 + one AAC-LC 48kHz stereo track | PASS | ffprobe of fork-owned user recording |
+| AAC packet continuity and monotonic timestamps | PASS | 4026 packets, max gap 0.021334 s, zero PTS/DTS reversals |
+
+At 12:06:01 local time, Android recorded REMOTE_SUBMIX and VOICE_RECOGNITION
+for the fork, followed by PUBG VOICE_COMMUNICATION, all not silenced. PUBG later
+switched to MIC at 12:06:20; REC remained active through 12:07:27. Earlier fork
+recording also spans a PUBG voice-chat start/stop. This verifies policy coexistence
+for the observed transitions, not every routing or repeated-toggle scenario.
+
+The examined 86.619-second file has 2668 video frames, average encoded rate about
+31.11 FPS, maximum video packet gap 0.117033 seconds. Video begins at 0.8528 s and
+audio at 0 s. Baseline starts differed too. These mixed lobby/menu/game samples
+are not comparable gameplay benchmarks; no 60-FPS, frame-drop, 1% low or perceptual
+A/V synchronization pass is claimed. Game audio in the mixed track has not been
+independently isolated or audibly verified. Generic logcat tags were unavailable
+in the retrieved device buffer; system recording history provided policy evidence.
+
+APK: `REC-hcsolakoglu-PUBG-Mic-Android12.apk`, 21,701,908 bytes.
+SHA-256: `f0ded47fe820285876c5507c9a95651b031e976655f0302f194d5967a3e1a767`.
+Signer certificate SHA-256:
+`4328deb74464c3fe270f350bc56c9dfcefbc6eb63082bf22f99eedf4df87a38a`.
+An independent RSA-3072 key signs this fork; key and password remain outside Git.
+
+## Diff scope and upstream submission
+
+VideoEncoder, AudioEncoder, ScreenRecorderEngine, PcmAudioMixer, RecordingService,
+streaming, screenshots, replay and vault implementation have zero changes from
+v0.8.1. Remaining changes are audio lifecycle/diagnostics, opt-in service/config/UI,
+serialization tests, fork identity/signing, and required release documentation.
+
+For an upstream PR, prepare a separate branch based on their requested target,
+port only the audio/config/permission changes and tests, and omit fork application
+ID, branding, signing and release metadata. Include reproducible device evidence,
+the limited acceptance matrix and the rationale for zero accessibility events.
+Do not represent this single user test as universal Android/MIUI support. No
+upstream PR has been opened. Multi-track audio is a separate feature proposal:
+three AAC tracks (game, microphone, mix) require shared timestamp handling,
+separate encoder/resource cleanup and player/editor compatibility validation.
 
 Run with intentional game sound and spoken test phrases, not a silent lobby.
 Check both the saved recording and whether a teammate actually hears the player.
