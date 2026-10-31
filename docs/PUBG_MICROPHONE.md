@@ -161,6 +161,18 @@ An independent RSA-3072 key signs this fork; key and password remain outside Git
 
 ## Diff scope and upstream submission
 
+### Compatibility scope
+
+The minimum supported platform remains Android 10/API29, matching the v0.8.1 base.
+No device-model allowlist or hardware-model branch was introduced. API31 audio-mode
+callbacks are guarded by a runtime SDK check; other added capture callbacks use
+APIs available at the existing minimum. Normal source selection is retained when
+the optional assistance mode is disabled or disconnected. These properties preserve
+the intended compatibility floor; they do not prove behavior on every Android
+release or vendor implementation. Concurrent sharing is verified only for the
+reported Android 12 / MIUI 14 setup. The existing unit suite passes, but all unrelated
+features and every supported OS/device combination have not been exercised end to end.
+
 VideoEncoder, AudioEncoder, ScreenRecorderEngine, PcmAudioMixer, RecordingService,
 streaming, screenshots, replay and vault implementation have zero changes from
 v0.8.1. Remaining changes are audio lifecycle/diagnostics, opt-in service/config/UI,
