@@ -7,27 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.9.0-audio.2] - 2026-10-31
+
+### 🐛 Fixed
+- An audio encoder error in separate-track mode no longer deletes the whole recording; it is logged as in mixed mode.
+- Pre-muxer sample buffer scales with track count, so two-track startup keeps the same per-track headroom.
+- Restore guarded MediaMuxer release on stop.
+- Concurrent microphone and separate-track switches can be turned off after choosing a source that disables them.
+- A transient missing recording configuration no longer repeats the microphone-silenced warning.
+- A failed audio encoder no longer blocks the shared capture thread for 10 ms per chunk, so the other audio track keeps flowing.
+
 ## [0.9.0-audio.1] - 2026-10-31
 
-### Added
+### 🚀 Added
 - Optional local MP4 game and microphone audio tracks, off by default; independent AAC bitrate controls (64–320 kbps).
 - Stable game-first audio track order and tests for format arrival order, PCM isolation, gains, silence/recovery, settings compatibility and encoder EOS cleanup.
 
-### Fixed
+### 🐛 Fixed
 - Drain final AAC packets before closing the muxer; release an unstarted muxer on initialization failure.
 - Include both selected audio bitrates in local storage estimates. Video capture and concurrent microphone access are unchanged.
 
 ## [0.8.2-pubg.1] - 2026-10-31
 
-### Added
+### 🚀 Added
 * Explicit opt-in concurrent microphone assistance with no accessibility events, window access or overlays. Android 12 policy candidate; MIUI/PUBG device verification pending.
 * Throttled recording configuration, routing, policy silencing and independent stream-level diagnostics.
 * Independent package identity and release signing support for coexistence with official REC.
 
-### Fixed
+### 🐛 Fixed
 * Duplicate preparation/start protection and cancellation-aware audio readers.
 
-[0.8.2-pubg.1]: https://github.com/hcsolakoglu/rec/compare/v0.8.1...fix/pubg-concurrent-microphone
+[0.9.0-audio.2]: https://github.com/hcsolakoglu/rec/compare/separate-audio-0.9.0-1...separate-audio-0.9.0-2
+[0.9.0-audio.1]: https://github.com/hcsolakoglu/rec/compare/pubg-mic-0.8.2-1...separate-audio-0.9.0-1
+[0.8.2-pubg.1]: https://github.com/hcsolakoglu/rec/compare/v0.8.1...pubg-mic-0.8.2-1
 
 ## [0.8.1] - 2026-09-08
 

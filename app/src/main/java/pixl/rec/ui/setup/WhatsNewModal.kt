@@ -79,16 +79,28 @@ fun WhatsNewModal(
 
     val separateAudioTitle = androidx.compose.ui.res.stringResource(R.string.separate_audio_release_title)
     val separateAudioDescription = androidx.compose.ui.res.stringResource(R.string.separate_audio_release_description)
-    val patchNotes = remember(separateAudioTitle, separateAudioDescription) {
+    val separateAudioFixTitle = androidx.compose.ui.res.stringResource(R.string.separate_audio_fix_release_title)
+    val separateAudioFixDescription = androidx.compose.ui.res.stringResource(R.string.separate_audio_fix_release_description)
+    val concurrentMicTitle = androidx.compose.ui.res.stringResource(R.string.concurrent_mic_release_title)
+    val concurrentMicDescription = androidx.compose.ui.res.stringResource(R.string.concurrent_mic_release_description)
+    val patchNotes = remember(
+        separateAudioTitle, separateAudioDescription, separateAudioFixTitle,
+        separateAudioFixDescription, concurrentMicTitle, concurrentMicDescription
+    ) {
         listOf(
+            PatchNote(
+                title = separateAudioFixTitle,
+                description = separateAudioFixDescription,
+                category = PatchCategory.FIXED
+            ),
             PatchNote(
                 title = separateAudioTitle,
                 description = separateAudioDescription,
                 category = PatchCategory.ADDED
             ),
             PatchNote(
-                title = "Experimental concurrent microphone",
-                description = "Optional accessibility assistance for game voice chat. No screen access or overlays. Device validation is pending; recording may still be silenced by Android.",
+                title = concurrentMicTitle,
+                description = concurrentMicDescription,
                 category = PatchCategory.ADDED
             ),
             PatchNote(
